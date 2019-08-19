@@ -12,8 +12,10 @@ except ImportError:
     pass
 
 # configurations
-img_folder = '/mnt/SSD/xtwang/BasicSR_datasets/DIV2K800/DIV2K800_sub/*'  # glob matching pattern
-lmdb_save_path = '/mnt/SSD/xtwang/BasicSR_datasets/DIV2K800/DIV2K800_sub.lmdb'
+mode = "train"
+shard = "LR"
+img_folder = '/home/teven/canvas/python/datasets/BSDS_{}_bicLRx4/{}/x4/*'.format(mode, shard)  # glob matching pattern
+lmdb_save_path = '/home/teven/canvas/python/datasets/BSDS_{}_bicLRx4/{}/x4.lmdb'.format(mode, shard)
 meta_info = {'name': 'DIV2K800_sub_GT'}
 mode = 2  # 1 for reading all the images to memory and then writing to lmdb (more memory);
 # 2 for reading several images and then writing to lmdb, loop over (less memory)

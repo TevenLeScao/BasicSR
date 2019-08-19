@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel
 
 
-class BaseModel():
+class BaseModel:
     def __init__(self, opt):
         self.opt = opt
         self.device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')

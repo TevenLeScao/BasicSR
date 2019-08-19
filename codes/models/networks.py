@@ -27,6 +27,24 @@ def define_G(opt):
     return netG
 
 
+#### Diffeq Generator
+def define_G(opt):
+    opt_net = opt['network_G']
+    which_model = opt_net['which_model_G']
+
+    if which_model == 'MSRResNet':
+        netG = SRResNet_arch.MSRResNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
+                                       nf=opt_net['nf'], nb=opt_net['nb'], upscale=opt_net['scale'])
+    elif which_model == 'RRDBNet':
+        netG = RRDBNet_arch.RRDBNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
+                                    nf=opt_net['nf'], nb=opt_net['nb'])
+    # elif which_model == 'sft_arch':  # SFT-GAN
+    #     netG = sft_arch.SFT_Net()
+    else:
+        raise NotImplementedError('Generator model [{:s}] not recognized'.format(which_model))
+    return netG
+
+
 #### Discriminator
 def define_D(opt):
     opt_net = opt['network_D']

@@ -15,8 +15,9 @@ def generate_mod_LR_bic():
     up_scale = 4
     mod_scale = 4
     # set data dir
-    sourcedir = '/data/datasets/img'
-    savedir = '/data/datasets/mod'
+    mode = "valid"
+    sourcedir = '/home/teven/canvas/python/datasets/BSDS_{}/'.format(mode)
+    savedir = '/home/teven/canvas/python/datasets/BSDS_{}_bicLRx4'.format(mode)
 
     saveHRpath = os.path.join(savedir, 'HR', 'x' + str(mod_scale))
     saveLRpath = os.path.join(savedir, 'LR', 'x' + str(up_scale))

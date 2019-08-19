@@ -7,15 +7,19 @@ use_tb_logger: true
 model: srgan
 distortion: sr
 scale: 4
-gpu_ids: [1]
+gpu_ids: [0]
 
 #### datasets
 datasets:
   train:
     name: DIV2K
     mode: LQGT
-    dataroot_GT: /mnt/SSD/xtwang/BasicSR_datasets/DIV2K800/DIV2K800_sub.lmdb
-    dataroot_LQ: /mnt/SSD/xtwang/BasicSR_datasets/DIV2K800/DIV2K800_sub_bicLRx4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/LR/x4.lmdb
+    #    name: BSD
+    #    mode: LQGT
+    #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+    #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 
     use_shuffle: true
     n_workers: 6  # per GPU
@@ -25,10 +29,14 @@ datasets:
     use_rot: true
     color: RGB
   val:
-    name: val_set14_part
+    name: DIV2K_val
     mode: LQGT
-    dataroot_GT: /mnt/SSD/xtwang/BasicSR_datasets/val_set14_part/Set14
-    dataroot_LQ: /mnt/SSD/xtwang/BasicSR_datasets/val_set14_part/Set14_bicLRx4
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/LR/x4.lmdb
+    #    name: BSD_val
+    #    mode: LQGT
+    #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+    #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
 
 #### network structures
 network_G:
@@ -61,7 +69,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  niter: 400000
+  niter: 10000
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
