@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 # configurations
-dataset_name = "BSDS"
+dataset_name = "urban100"
 removed_fraction = 0
 
 def main(split):

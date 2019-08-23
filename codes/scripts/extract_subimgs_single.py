@@ -4,22 +4,26 @@ import sys
 from multiprocessing import Pool
 import numpy as np
 import cv2
+
 try:
     sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
     from utils.util import ProgressBar
 except ImportError:
     pass
 
+dataset_name = 'urban100'
 
-def main():
+crop_sz = 480
+step = 240
+thres_sz = 48
+compression_level = 3  # 3 is the default value in cv2
+
+
+def main(split):
     """A multi-thread tool to crop sub imags."""
-    input_folder = '/home/teven/canvas/python/datasets/DIV2K_valid_HR/'
-    save_folder = '/home/teven/canvas/python/datasets/DIV2K_valid_HR_sub/'
+    input_folder = '/home/teven/canvas/python/datasets/{}_{}_uncropped/'.format(dataset_name, split)
+    save_folder = '/home/teven/canvas/python/datasets/{}_{}/'.format(dataset_name, split)
     n_thread = 20
-    crop_sz = 480
-    step = 240
-    thres_sz = 48
-    compression_level = 3  # 3 is the default value in cv2
     # CV_IMWRITE_PNG_COMPRESSION from 0 to 9. A higher value means a smaller size and longer
     # compression time. If read raw images during training, use 0 for faster IO speed.
 
@@ -88,4 +92,5 @@ def worker(path, save_folder, crop_sz, step, thres_sz, compression_level):
 
 
 if __name__ == '__main__':
-    main()
+    for split in ["train", "valid"]:
+        main(split)

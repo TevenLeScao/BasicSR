@@ -1,5 +1,5 @@
 #### general settings
-name: 003_RRDB_ESRGANx4_DIV2K
+name: NoDiffMSRResnet
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -11,8 +11,8 @@ datasets:
   train:
     name: DIV2K
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
 #    name: BSD
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
@@ -28,20 +28,22 @@ datasets:
   val:
     name: DIV2K_val
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
 #    name: BSD_val
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
 #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    batch_size: 64
 
 #### network structures
 network_G:
-  which_model_G: RRDBNet
+  which_model_G: MSRResNet
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 23
+  nb: 16
+  diff: false
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3
@@ -49,7 +51,7 @@ network_D:
 
 #### path
 path:
-  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth
+  pretrain_model_G: null
   strict_load: true
   resume_state: ~
 
@@ -65,7 +67,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  niter: 10000
+  niter: 2000
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
@@ -81,7 +83,7 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: !!float 5e3
+  val_freq: 2000
 
 #### logger
 logger:

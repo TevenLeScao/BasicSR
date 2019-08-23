@@ -1,5 +1,5 @@
 #### general settings
-name: RRDB_ESRGAN_x4
+name: RRDB_ESRGAN_x4_DIV_10000
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -11,16 +11,20 @@ datasets:
   train:
     name: DIV2K
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
 #    name: BSD
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
 #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+#    name: urban100
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/urban100_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_train_bicLRx4/LR/x4.lmdb
 
     use_shuffle: true
     n_workers: 6  # per GPU
-    batch_size: 16
+    batch_size: 32
     GT_size: 128
     use_flip: true
     use_rot: true
@@ -28,12 +32,17 @@ datasets:
   val:
     name: DIV2K_val
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
 #    name: BSD_val
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
 #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    name: urban100
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/LR/x4.lmdb
+    batch_size: 32
 
 #### network structures
 network_G:
@@ -50,7 +59,8 @@ network_D:
 
 #### path
 path:
-  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth
+#  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth
+  pretrain_model_G: null
   strict_load: true
   resume_state: ~
 
@@ -66,7 +76,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  niter: 1
+  niter: 10000
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
@@ -82,7 +92,7 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: !!float 5e3
+  val_freq: !!float 1e3
 
 #### logger
 logger:

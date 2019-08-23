@@ -12,14 +12,14 @@ gpu_ids: [0]
 #### datasets
 datasets:
   train:
-    name: DIV2K
+#    name: DIV2K
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
+    name: BSD
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/LR/x4.lmdb
-    #    name: BSD
-    #    mode: LQGT
-    #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
-    #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 
     use_shuffle: true
     n_workers: 6  # per GPU
@@ -29,14 +29,15 @@ datasets:
     use_rot: true
     color: RGB
   val:
-    name: DIV2K_val
+#    name: DIV2K_val
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+    name: BSD_val
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/LR/x4.lmdb
-    #    name: BSD_val
-    #    mode: LQGT
-    #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-    #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    batch_size: 16
 
 #### network structures
 network_G:
@@ -46,6 +47,7 @@ network_G:
   nf: 64
   nb: 16
   upscale: 4
+  diff: False
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3
@@ -85,7 +87,7 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: !!float 5e3
+  val_freq: 100
 
 #### logger
 logger:

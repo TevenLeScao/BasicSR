@@ -22,6 +22,9 @@ def initialize_weights(net_l, scale=1):
             elif isinstance(m, nn.BatchNorm2d):
                 init.constant_(m.weight, 1)
                 init.constant_(m.bias.data, 0.0)
+            elif isinstance(m, nn.ModuleList):
+                for submodule in m:
+                    initialize_weights(submodule)
 
 
 def make_layer(block, n_layers):

@@ -14,12 +14,12 @@ datasets:
   train:
     name: DIV2K
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_sub_bicLRx4/LR/x4.lmdb
-    #    name: BSD
-    #    mode: LQGT
-    #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
-    #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
+#    name: BSD
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 
     use_shuffle: true
     n_workers: 6  # per GPU
@@ -31,12 +31,13 @@ datasets:
   val:
     name: DIV2K_val
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_HR_sub_bicLRx4/LR/x4.lmdb
-    #    name: BSD_val
-    #    mode: LQGT
-    #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-    #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+#    name: BSD_val
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    batch_size: 64
 
 #### network structures
 network_G:
@@ -60,7 +61,7 @@ train:
   lr_scheme: CosineAnnealingLR_Restart
   beta1: 0.9
   beta2: 0.99
-  niter: 20000
+  niter: 10
   warmup_iter: -1  # no warm up
   T_period: [250000, 250000, 250000, 250000]
   restarts: [250000, 500000, 750000]
@@ -71,7 +72,7 @@ train:
   pixel_weight: 1.0
 
   manual_seed: 10
-  val_freq: !!float 5e3
+  val_freq: !!float 5e0
 
 #### logger
 logger:

@@ -1,19 +1,25 @@
 import functools
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import models.modules.module_util as mutil
+from torchdiffeq._impl.conv import ODEBlock, ODEfunc
 
 
 class MSRResNet(nn.Module):
     ''' modified SRResNet'''
 
-    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=16, upscale=4):
+    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=16, upscale=4, differential=False):
         super(MSRResNet, self).__init__()
         self.upscale = upscale
 
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
-        basic_block = functools.partial(mutil.ResidualBlock_noBN, nf=nf)
-        self.recon_trunk = mutil.make_layer(basic_block, nb)
+        if differential:
+            self.recon_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False))
+            mutil.initialize_weights(self.recon_trunk.odefunc.convs)
+        else:
+            basic_block = functools.partial(mutil.ResidualBlock_noBN, nf=nf)
+            self.recon_trunk = mutil.make_layer(basic_block, nb)
 
         # upsampling
         if self.upscale == 2:
@@ -31,7 +37,7 @@ class MSRResNet(nn.Module):
         self.conv_last = nn.Conv2d(nf, out_nc, 3, 1, 1, bias=True)
 
         # activation function
-        self.lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+        self.lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=False)
 
         # initialization
         mutil.initialize_weights([self.conv_first, self.upconv1, self.HRconv, self.conv_last], 0.1)
@@ -39,7 +45,8 @@ class MSRResNet(nn.Module):
             mutil.initialize_weights(self.upconv2, 0.1)
 
     def forward(self, x):
-        fea = self.lrelu(self.conv_first(x))
+        convd = self.conv_first(x)
+        fea = self.lrelu(convd)
         out = self.recon_trunk(fea)
 
         if self.upscale == 4:
@@ -50,5 +57,5 @@ class MSRResNet(nn.Module):
 
         out = self.conv_last(self.lrelu(self.HRconv(out)))
         base = F.interpolate(x, scale_factor=self.upscale, mode='bilinear', align_corners=False)
-        out += base
+        out = base + out
         return out

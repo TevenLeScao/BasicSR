@@ -123,12 +123,15 @@ class SRGANModel(BaseModel):
             self.log_dict = OrderedDict()
 
         self.print_network()  # print network
-        self.load()  # load G and D if needed
+        try:
+            self.load()  # load G and D if needed
+        except RuntimeError:
+            pass
 
     def feed_data(self, data, need_GT=True):
         self.var_L = data['LQ'].to(self.device)  # LQ
         if need_GT:
-            self.var_H = data['GT'].to(self.device)  # GT
+            self.real_H = data['GT'].to(self.device)  # GT
             input_ref = data['ref'] if 'ref' in data else data['GT']
             self.var_ref = input_ref.to(self.device)
 
@@ -143,13 +146,21 @@ class SRGANModel(BaseModel):
         l_g_total = 0
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:  # pixel loss
-                l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.var_H)
-                l_g_total += l_g_pix
+                l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
+                # if step == 100:
+                #     print('\n\n\n\n fake H \n\n\n\n')
+                #     print(self.fake_H)
+                #     print('\n\n\n\n var H \n\n\n\n')
+                #     print(self.var_H)
+                #     print('\n\n\n\n var L \n\n\n\n')
+                #     print(self.var_L)
+                #     1[2]
+                l_g_total = l_g_pix + l_g_total
             if self.cri_fea:  # feature loss
-                real_fea = self.netF(self.var_H).detach()
+                real_fea = self.netF(self.real_H).detach()
                 fake_fea = self.netF(self.fake_H)
                 l_g_fea = self.l_fea_w * self.cri_fea(fake_fea, real_fea)
-                l_g_total += l_g_fea
+                l_g_total = l_g_fea + l_g_total
 
             pred_g_fake = self.netD(self.fake_H)
             if self.opt['train']['gan_type'] == 'gan':
@@ -159,7 +170,7 @@ class SRGANModel(BaseModel):
                 l_g_gan = self.l_gan_w * (
                     self.cri_gan(pred_d_real - torch.mean(pred_g_fake), False) +
                     self.cri_gan(pred_g_fake - torch.mean(pred_d_real), True)) / 2
-            l_g_total += l_g_gan
+                l_g_total = l_g_gan + l_g_total
 
             l_g_total.backward()
             self.optimizer_G.step()
@@ -211,7 +222,7 @@ class SRGANModel(BaseModel):
         out_dict['LQ'] = self.var_L.detach()[0].float().cpu()
         out_dict['SR'] = self.fake_H.detach()[0].float().cpu()
         if need_GT:
-            out_dict['GT'] = self.var_H.detach()[0].float().cpu()
+            out_dict['GT'] = self.real_H.detach()[0].float().cpu()
         return out_dict
 
     def print_network(self):

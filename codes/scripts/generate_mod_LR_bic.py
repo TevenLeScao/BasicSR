@@ -3,6 +3,8 @@ import sys
 import cv2
 import numpy as np
 
+dataset_name = "urban100"
+
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from data.util import imresize_np
@@ -10,14 +12,13 @@ except ImportError:
     pass
 
 
-def generate_mod_LR_bic():
+def generate_mod_LR_bic(split):
     # set parameters
     up_scale = 4
     mod_scale = 4
     # set data dir
-    mode = "valid"
-    sourcedir = '/home/teven/canvas/python/datasets/BSDS_{}/'.format(mode)
-    savedir = '/home/teven/canvas/python/datasets/BSDS_{}_bicLRx4'.format(mode)
+    sourcedir = '/home/teven/canvas/python/datasets/{}_{}'.format(dataset_name, split)
+    savedir = '/home/teven/canvas/python/datasets/{}_{}_bicLRx4'.format(dataset_name, split)
 
     saveHRpath = os.path.join(savedir, 'HR', 'x' + str(mod_scale))
     saveLRpath = os.path.join(savedir, 'LR', 'x' + str(up_scale))
@@ -79,4 +80,5 @@ def generate_mod_LR_bic():
 
 
 if __name__ == "__main__":
-    generate_mod_LR_bic()
+    for split in ["train", "valid"]:
+        generate_mod_LR_bic(split)

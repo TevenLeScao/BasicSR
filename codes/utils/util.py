@@ -131,6 +131,15 @@ def save_img(img, img_path, mode='RGB'):
 ####################
 
 
+def tensor_psnr(img_tensor_1, img_tensor_2):
+    # img1 and img2 have range [0, 1]
+    mse = torch.mean((img_tensor_1 - img_tensor_2).pow(2), dim=[1, 2, 3])
+    if mse.min().item() == 0:
+        return float('inf')
+    else:
+        return -10 * torch.mean(torch.log10(mse)).item()
+
+
 def calculate_psnr(img1, img2):
     # img1 and img2 have range [0, 255]
     img1 = img1.astype(np.float64)

@@ -133,18 +133,18 @@ class SFTGAN_ACD_Model(BaseModel):
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:  # pixel loss
                 l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.var_H)
-                l_g_total += l_g_pix
+                l_g_total = l_g_pix + l_g_total
             if self.cri_fea:  # feature loss
                 real_fea = self.netF(self.var_H).detach()
                 fake_fea = self.netF(self.fake_H)
                 l_g_fea = self.l_fea_w * self.cri_fea(fake_fea, real_fea)
-                l_g_total += l_g_fea
+                l_g_total = l_g_fea + l_g_total
             # G gan + cls loss
             pred_g_fake, cls_g_fake = self.netD(self.fake_H)
             l_g_gan = self.l_gan_w * self.cri_gan(pred_g_fake, True)
             l_g_cls = self.l_gan_w * self.cri_ce(cls_g_fake, self.var_cat)
-            l_g_total += l_g_gan
-            l_g_total += l_g_cls
+            l_g_total = l_g_gan + l_g_total
+            l_g_total = l_g_cls + l_g_total
 
             l_g_total.backward()
             self.optimizer_G_SFT.step()
@@ -174,7 +174,7 @@ class SFTGAN_ACD_Model(BaseModel):
             interp.requires_grad = True
             interp_crit, _ = self.netD(interp)
             l_d_gp = self.l_gp_w * self.cri_gp(interp, interp_crit)  # maybe wrong in cls?
-            l_d_total += l_d_gp
+            l_d_total = l_d_gp + l_g_total
 
         l_d_total.backward()
         self.optimizer_D.step()
