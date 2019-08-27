@@ -1,5 +1,5 @@
 #### general settings
-name: RRDB_ESRGAN_x4_DIV_10000
+name: RRDB_ESRGAN_x4_BSD_Diff
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -9,14 +9,14 @@ gpu_ids: [0]
 #### datasets
 datasets:
   train:
-    name: DIV2K
-    mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
-#    name: BSD
+#    name: DIV2K
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
+    name: BSD
+    mode: LQGT
+    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/urban100_train_bicLRx4/HR/x4.lmdb
@@ -24,25 +24,25 @@ datasets:
 
     use_shuffle: true
     n_workers: 6  # per GPU
-    batch_size: 32
+    batch_size: 64
     GT_size: 128
     use_flip: true
     use_rot: true
     color: RGB
   val:
-    name: DIV2K_val
-    mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
-#    name: BSD_val
+#    name: DIV2K_val
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+    name: BSD_val
+    mode: LQGT
+    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
 #    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/LR/x4.lmdb
-    batch_size: 32
+    batch_size: 64
 
 #### network structures
 network_G:
@@ -50,7 +50,7 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 5
+  nb: 2
   diff: false
 network_D:
   which_model_D: discriminator_vgg_128
@@ -66,6 +66,7 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
+  G_pretraining: !!float 1e2
   lr_G: !!float 1e-4
   weight_decay_G: 0
   beta1_G: 0.9
@@ -76,7 +77,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  niter: 10000
+  niter: 1000
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
@@ -84,7 +85,7 @@ train:
   pixel_criterion: l1
   pixel_weight: !!float 1e-2
   feature_criterion: l1
-  feature_weight: 1
+  feature_weight: !!float 1e-0
   gan_type: ragan  # gan | ragan
   gan_weight: !!float 5e-3
 
@@ -92,9 +93,9 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: !!float 1e3
+  val_freq: !!float 2e0
 
 #### logger
 logger:
-  print_freq: 100
+  print_freq: !!float 2e0
   save_checkpoint_freq: !!float 5e3

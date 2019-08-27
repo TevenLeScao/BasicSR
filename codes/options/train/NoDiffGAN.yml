@@ -57,6 +57,7 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
+  G_pretraining: 0
   lr_G: !!float 1e-4
   weight_decay_G: 0
   beta1_G: 0.9

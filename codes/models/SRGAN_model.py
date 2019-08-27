@@ -40,6 +40,10 @@ class SRGANModel(BaseModel):
         # define losses, optimizer and scheduler
         if self.is_train:
             # G pixel loss
+            if train_opt['G_pretraining'] >= 1:
+                self.pretraining_steps = train_opt['G_pretraining']
+            else:
+                self.pretraining_steps = 0
             if train_opt['pixel_weight'] > 0:
                 l_pix_type = train_opt['pixel_criterion']
                 if l_pix_type == 'l1':
@@ -147,29 +151,23 @@ class SRGANModel(BaseModel):
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:  # pixel loss
                 l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
-                # if step == 100:
-                #     print('\n\n\n\n fake H \n\n\n\n')
-                #     print(self.fake_H)
-                #     print('\n\n\n\n var H \n\n\n\n')
-                #     print(self.var_H)
-                #     print('\n\n\n\n var L \n\n\n\n')
-                #     print(self.var_L)
-                #     1[2]
                 l_g_total = l_g_pix + l_g_total
-            if self.cri_fea:  # feature loss
-                real_fea = self.netF(self.real_H).detach()
-                fake_fea = self.netF(self.fake_H)
-                l_g_fea = self.l_fea_w * self.cri_fea(fake_fea, real_fea)
-                l_g_total = l_g_fea + l_g_total
 
-            pred_g_fake = self.netD(self.fake_H)
-            if self.opt['train']['gan_type'] == 'gan':
-                l_g_gan = self.l_gan_w * self.cri_gan(pred_g_fake, True)
-            elif self.opt['train']['gan_type'] == 'ragan':
-                pred_d_real = self.netD(self.var_ref).detach()
-                l_g_gan = self.l_gan_w * (
-                    self.cri_gan(pred_d_real - torch.mean(pred_g_fake), False) +
-                    self.cri_gan(pred_g_fake - torch.mean(pred_d_real), True)) / 2
+            if step > self.pretraining_steps:
+                if self.cri_fea:  # feature loss
+                    real_fea = self.netF(self.real_H).detach()
+                    fake_fea = self.netF(self.fake_H)
+                    l_g_fea = self.l_fea_w * self.cri_fea(fake_fea, real_fea)
+                    l_g_total = l_g_fea + l_g_total
+
+                pred_g_fake = self.netD(self.fake_H)
+                if self.opt['train']['gan_type'] == 'gan':
+                    l_g_gan = self.l_gan_w * self.cri_gan(pred_g_fake, True)
+                elif self.opt['train']['gan_type'] == 'ragan':
+                    pred_d_real = self.netD(self.var_ref).detach()
+                    l_g_gan = self.l_gan_w * (
+                        self.cri_gan(pred_d_real - torch.mean(pred_g_fake), False) +
+                        self.cri_gan(pred_g_fake - torch.mean(pred_d_real), True)) / 2
                 l_g_total = l_g_gan + l_g_total
 
             l_g_total.backward()
@@ -199,9 +197,10 @@ class SRGANModel(BaseModel):
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:
                 self.log_dict['l_g_pix'] = l_g_pix.item()
-            if self.cri_fea:
-                self.log_dict['l_g_fea'] = l_g_fea.item()
-            self.log_dict['l_g_gan'] = l_g_gan.item()
+            if step > self.pretraining_steps:
+                if self.cri_fea:
+                    self.log_dict['l_g_fea'] = l_g_fea.item()
+                self.log_dict['l_g_gan'] = l_g_gan.item()
 
         self.log_dict['l_d_real'] = l_d_real.item()
         self.log_dict['l_d_fake'] = l_d_fake.item()
