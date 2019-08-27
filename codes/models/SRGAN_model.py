@@ -41,9 +41,9 @@ class SRGANModel(BaseModel):
         if self.is_train:
             # G pixel loss
             if train_opt['G_pretraining'] >= 1:
-                self.pretraining_steps = train_opt['G_pretraining']
+                self.pretraining_epochs = train_opt['G_pretraining']
             else:
-                self.pretraining_steps = 0
+                self.pretraining_epochs = 0
             if train_opt['pixel_weight'] > 0:
                 l_pix_type = train_opt['pixel_criterion']
                 if l_pix_type == 'l1':
@@ -139,7 +139,7 @@ class SRGANModel(BaseModel):
             input_ref = data['ref'] if 'ref' in data else data['GT']
             self.var_ref = input_ref.to(self.device)
 
-    def optimize_parameters(self, step):
+    def optimize_parameters(self, epoch, step):
         # G
         for p in self.netD.parameters():
             p.requires_grad = False
@@ -153,7 +153,7 @@ class SRGANModel(BaseModel):
                 l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
                 l_g_total = l_g_pix + l_g_total
 
-            if step > self.pretraining_steps:
+            if epoch > self.pretraining_epochs:
                 if self.cri_fea:  # feature loss
                     real_fea = self.netF(self.real_H).detach()
                     fake_fea = self.netF(self.fake_H)
@@ -197,7 +197,7 @@ class SRGANModel(BaseModel):
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:
                 self.log_dict['l_g_pix'] = l_g_pix.item()
-            if step > self.pretraining_steps:
+            if epoch > self.pretraining_epochs:
                 if self.cri_fea:
                     self.log_dict['l_g_fea'] = l_g_fea.item()
                 self.log_dict['l_g_gan'] = l_g_gan.item()

@@ -61,7 +61,7 @@ train:
   lr_scheme: CosineAnnealingLR_Restart
   beta1: 0.9
   beta2: 0.99
-  niter: 10
+  nepochs: 20
   warmup_iter: -1  # no warm up
   T_period: [250000, 250000, 250000, 250000]
   restarts: [250000, 500000, 750000]
@@ -72,9 +72,8 @@ train:
   pixel_weight: 1.0
 
   manual_seed: 10
-  val_freq: !!float 5e0
+  val_freq: !!float 2e0
 
 #### logger
 logger:
-  print_freq: 100
-  save_checkpoint_freq: !!float 5e3
+  print_freq: 1

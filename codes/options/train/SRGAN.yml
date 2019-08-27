@@ -72,7 +72,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  niter: 10000
+  nepochs: 20
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
@@ -88,9 +88,8 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: 100
+  val_freq: 2
 
 #### logger
 logger:
-  print_freq: 100
-  save_checkpoint_freq: !!float 5e3
+  print_freq: 1
