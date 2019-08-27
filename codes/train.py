@@ -154,6 +154,8 @@ def main():
         pretraining_epochs = 0
     logger.info('Start training from epoch: {:d}, iter: {:d}'.format(start_epoch, current_step))
     best_niqe = 1e10
+    best_psnr = 0
+    patience = 0
     for epoch in range(start_epoch, total_epochs):
         if pretraining_epochs > 0:
             if epoch == 0:
@@ -226,14 +228,10 @@ def main():
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx
 
-            # log
-            logger.info('# Validation # PSNR: {:.4e} # NIQE: {:.4e}'.format(avg_psnr, avg_niqe))
-            logger_val = logging.getLogger('val')  # validation logger
-            logger_val.info('<epoch:{:3d}, iter:{:8,d}> psnr: {:.4e} niqe: {:.4e}'.format(
-                epoch, current_step, avg_psnr, avg_niqe))
-            # tensorboard logger
-            if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                tb_logger.add_scalar('psnr', avg_psnr, current_step)
+            if avg_niqe > best_niqe and avg_psnr < best_niqe:
+                patience += 1
+                if patience == opt['train']['epoch_patience']:
+                    break
 
             if avg_niqe < best_niqe:
                 best_niqe = avg_niqe
@@ -242,6 +240,18 @@ def main():
                     logger.info('Saving models and training states.')
                     model.save(current_step)
                     model.save_training_state(epoch, current_step)
+
+            if avg_psnr > best_psnr:
+                best_psnr = avg_psnr
+
+            # log
+            logger.info('# Validation # PSNR: {:.4e} # NIQE: {:.4e}'.format(avg_psnr, avg_niqe))
+            logger_val = logging.getLogger('val')  # validation logger
+            logger_val.info('<epoch:{:3d}, iter:{:8,d}> psnr: {:.4e} niqe: {:.4e} (best: {:.4e}/{:.4e})'.format(
+                epoch, current_step, avg_psnr, avg_niqe, best_psnr, best_niqe))
+            # tensorboard logger
+            if opt['use_tb_logger'] and 'debug' not in opt['name']:
+                tb_logger.add_scalar('psnr', avg_psnr, current_step)
 
 
     if rank <= 0:
