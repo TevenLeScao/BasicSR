@@ -12,6 +12,7 @@ from data.data_sampler import DistIterSampler
 
 import options.options as option
 from utils import util
+from utils.progress_bar import progress_bar
 from data import create_dataloader, create_dataset
 from models import create_model
 
@@ -161,7 +162,7 @@ def main():
                 logger.info('Pretraining done, adding feature and discriminator loss.')
         if opt['dist']:
             train_sampler.set_epoch(epoch)
-        for _, train_data in enumerate(train_loader):
+        for batch_num, train_data in enumerate(train_loader):
             current_step += 1
             #### update learning rate
             model.update_learning_rate(current_step, warmup_iter=opt['train']['warmup_iter'])
@@ -169,6 +170,8 @@ def main():
             #### training
             model.feed_data(train_data)
             model.optimize_parameters(epoch, current_step)
+
+            progress_bar(batch_num, len(train_loader), msg=None)
 
         #### log
         if epoch % opt['logger']['print_freq'] == 0:
@@ -189,7 +192,7 @@ def main():
             avg_psnr = 0.0
             avg_niqe = 0.0
             idx = 0
-            for val_data in val_loader:
+            for batch_num, val_data in enumerate(val_loader):
                 img_name = os.path.splitext(os.path.basename(val_data['LQ_path'][0]))[0]
                 img_dir = os.path.join(opt['path']['val_images'], img_name)
                 util.mkdir(img_dir)
@@ -217,6 +220,8 @@ def main():
                 # item_niqe = 0
                 if math.isfinite(item_niqe):
                     avg_niqe += item_niqe
+
+                progress_bar(batch_num, len(val_loader), msg=None)
 
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx

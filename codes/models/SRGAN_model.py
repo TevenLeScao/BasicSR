@@ -153,7 +153,7 @@ class SRGANModel(BaseModel):
                 l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
                 l_g_total = l_g_pix + l_g_total
 
-            if epoch > self.pretraining_epochs:
+            if epoch >= self.pretraining_epochs:
                 if self.cri_fea:  # feature loss
                     real_fea = self.netF(self.real_H).detach()
                     fake_fea = self.netF(self.fake_H)
@@ -197,7 +197,7 @@ class SRGANModel(BaseModel):
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:
                 self.log_dict['l_g_pix'] = l_g_pix.item()
-            if epoch > self.pretraining_epochs:
+            if epoch >= self.pretraining_epochs:
                 if self.cri_fea:
                     self.log_dict['l_g_fea'] = l_g_fea.item()
                 self.log_dict['l_g_gan'] = l_g_gan.item()
