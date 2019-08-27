@@ -82,7 +82,7 @@ for test_loader in test_loaders:
 
             psnr = util.calculate_psnr(cropped_sr_img * 255, cropped_gt_img * 255)
             ssim = util.calculate_ssim(cropped_sr_img * 255, cropped_gt_img * 255)
-            niqe = util.calculate_niqe(cropped_sr_img * 255)[0]
+            niqe = util.calculate_niqe(cropped_sr_img * 255)
             test_results['psnr'].append(psnr)
             test_results['ssim'].append(ssim)
             test_results['niqe'].append(ssim)
