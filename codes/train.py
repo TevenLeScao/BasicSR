@@ -147,6 +147,7 @@ def main():
 
     #### training
     logger.info('Start training from epoch: {:d}, iter: {:d}'.format(start_epoch, current_step))
+    best_niqe = 1e10
     for epoch in range(start_epoch, total_epochs + 1):
         if opt['dist']:
             train_sampler.set_epoch(epoch)
@@ -178,6 +179,7 @@ def main():
             # batched validation
             if current_step % opt['train']['val_freq'] == 0 and rank <= 0:
                 avg_psnr = 0.0
+                avg_niqe = 0.0
                 idx = 0
                 for val_data in val_loader:
                     img_name = os.path.splitext(os.path.basename(val_data['LQ_path'][0]))[0]
@@ -202,66 +204,32 @@ def main():
                         avg_psnr += item_psnr
                         idx += 1
 
+                    # calculate NIQE
+                    item_niqe = util.tensor_niqe(model.fake_H)
+                    # item_niqe = 0
+                    if math.isfinite(item_niqe):
+                        avg_niqe += item_niqe
+
                 avg_psnr = avg_psnr / idx
+                avg_niqe = avg_niqe / idx
 
                 # log
-                logger.info('# Validation # PSNR: {:.4e}'.format(avg_psnr))
+                logger.info('# Validation # PSNR: {:.4e} # NIQE: {:.4e}'.format(avg_psnr, avg_niqe))
                 logger_val = logging.getLogger('val')  # validation logger
-                logger_val.info('<epoch:{:3d}, iter:{:8,d}> psnr: {:.4e}'.format(
-                    epoch, current_step, avg_psnr))
+                logger_val.info('<epoch:{:3d}, iter:{:8,d}> psnr: {:.4e} niqe: {:.4e}'.format(
+                    epoch, current_step, avg_psnr, avg_niqe))
                 # tensorboard logger
                 if opt['use_tb_logger'] and 'debug' not in opt['name']:
                     tb_logger.add_scalar('psnr', avg_psnr, current_step)
 
-            # image-saving validation
-            # if current_step % opt['train']['val_freq'] == 0 and rank <= 0:
-            #     avg_psnr = 0.0
-            #     idx = 0
-            #     for val_data in val_loader:
-            #         img_name = os.path.splitext(os.path.basename(val_data['LQ_path'][0]))[0]
-            #         img_dir = os.path.join(opt['path']['val_images'], img_name)
-            #         util.mkdir(img_dir)
-            #
-            #         model.feed_data(val_data)
-            #         model.test()
-            #
-            #         visuals = model.get_current_visuals()
-            #         sr_img = util.tensor2img(visuals['SR'])  # uint8
-            #         gt_img = util.tensor2img(visuals['GT'])  # uint8
-            #
-            #         # Save SR images for reference
-            #         save_img_path = os.path.join(img_dir,
-            #                                      '{:s}_{:d}.png'.format(img_name, current_step))
-            #         util.save_img(sr_img, save_img_path)
-            #
-            #         # calculate PSNR
-            #         crop_size = opt['scale']
-            #         gt_img = gt_img / 255.
-            #         sr_img = sr_img / 255.
-            #         cropped_sr_img = sr_img[crop_size:-crop_size, crop_size:-crop_size, :]
-            #         cropped_gt_img = gt_img[crop_size:-crop_size, crop_size:-crop_size, :]
-            #         item_psnr = util.calculate_psnr(cropped_sr_img * 255, cropped_gt_img * 255)
-            #         if math.isfinite(item_psnr):
-            #             avg_psnr += item_psnr
-            #             idx += 1
-            #
-            #     avg_psnr = avg_psnr / idx
-            #
-            #     # log
-            #     logger.info('# Validation # PSNR: {:.4e}'.format(avg_psnr))
-            #     logger_val = logging.getLogger('val')  # validation logger
-            #     logger_val.info('<epoch:{:3d}, iter:{:8,d}> psnr: {:.4e}'.format(
-            #         epoch, current_step, avg_psnr))
-            #     # tensorboard logger
-            #     if opt['use_tb_logger'] and 'debug' not in opt['name']:
-            #         tb_logger.add_scalar('psnr', avg_psnr, current_step)
+                if avg_niqe < best_niqe:
+                    best_niqe = avg_niqe
+                    #### save models and training states
+                    if rank <= 0:
+                        logger.info('Saving models and training states.')
+                        model.save(current_step)
+                        model.save_training_state(epoch, current_step)
 
-            #### save models and training states
-            if current_step % opt['logger']['save_checkpoint_freq'] == 0:
-                if rank <= 0:
-                    logger.info('Saving models and training states.')
-                    model.save(current_step)
-                    model.save_training_state(epoch, current_step)
 
     if rank <= 0:
         logger.info('Saving the final model.')

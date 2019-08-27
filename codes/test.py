@@ -45,6 +45,7 @@ for test_loader in test_loaders:
     test_results['ssim'] = []
     test_results['psnr_y'] = []
     test_results['ssim_y'] = []
+    test_results['niqe'] = []
 
     for data in test_loader:
         need_GT = False if test_loader.dataset.opt['dataroot_GT'] is None else True
@@ -81,8 +82,10 @@ for test_loader in test_loaders:
 
             psnr = util.calculate_psnr(cropped_sr_img * 255, cropped_gt_img * 255)
             ssim = util.calculate_ssim(cropped_sr_img * 255, cropped_gt_img * 255)
+            niqe = util.calculate_niqe(cropped_sr_img * 255)[0]
             test_results['psnr'].append(psnr)
             test_results['ssim'].append(ssim)
+            test_results['niqe'].append(ssim)
 
             if gt_img.shape[2] == 3:  # RGB image
                 sr_img_y = bgr2ycbcr(sr_img, only_y=True)
@@ -98,10 +101,10 @@ for test_loader in test_loaders:
                 test_results['psnr_y'].append(psnr_y)
                 test_results['ssim_y'].append(ssim_y)
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}.'.
-                    format(img_name, psnr, ssim, psnr_y, ssim_y))
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}.'.
+                    format(img_name, psnr, ssim, niqe, psnr_y, ssim_y))
             else:
-                logger.info('{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}.'.format(img_name, psnr, ssim))
+                logger.info('{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}'.format(img_name, psnr, ssim, niqe))
         else:
             logger.info(img_name)
 
@@ -109,9 +112,10 @@ for test_loader in test_loaders:
         # Average PSNR/SSIM results
         ave_psnr = sum(test_results['psnr']) / len(test_results['psnr'])
         ave_ssim = sum(test_results['ssim']) / len(test_results['ssim'])
+        ave_niqe = sum(test_results['niqe']) / len(test_results['niqe'])
         logger.info(
-            '----Average PSNR/SSIM results for {}----\n\tPSNR: {:.6f} dB; SSIM: {:.6f}\n'.format(
-                test_set_name, ave_psnr, ave_ssim))
+            '----Average PSNR/SSIM/NIQE results for {}----\n\tPSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}\n'.format(
+                test_set_name, ave_psnr, ave_ssim, ave_niqe))
         if test_results['psnr_y'] and test_results['ssim_y']:
             ave_psnr_y = sum(test_results['psnr_y']) / len(test_results['psnr_y'])
             ave_ssim_y = sum(test_results['ssim_y']) / len(test_results['ssim_y'])

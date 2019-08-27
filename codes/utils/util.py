@@ -11,6 +11,7 @@ import cv2
 import torch
 from torchvision.utils import make_grid
 from shutil import get_terminal_size
+from utils.niqe_metric import niqe
 
 import yaml
 try:
@@ -140,6 +141,11 @@ def tensor_psnr(img_tensor_1, img_tensor_2):
         return -10 * torch.mean(torch.log10(mse)).item()
 
 
+def tensor_niqe(img_tensor):
+    # Modified version of skvideo NIQE measure to have original NIQE paper parameters + conversion to RGB
+    return np.mean(niqe(tensor2img(img_tensor), RGB=True, video_params=False))
+
+
 def calculate_psnr(img1, img2):
     # img1 and img2 have range [0, 255]
     img1 = img1.astype(np.float64)
@@ -148,6 +154,11 @@ def calculate_psnr(img1, img2):
     if mse == 0:
         return float('inf')
     return 20 * math.log10(255.0 / math.sqrt(mse))
+
+
+def calculate_niqe(img):
+    # Modified version of skvideo NIQE measure to have original NIQE paper parameters + conversion to RGB
+    return np.mean(niqe(img, RGB=True, video_params=False))
 
 
 def ssim(img1, img2):
