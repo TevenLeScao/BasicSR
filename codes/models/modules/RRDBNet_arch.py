@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import models.modules.module_util as mutil
+from torchdiffeq._impl.conv import ODEBlock, ODEfunc
 
 
 class ResidualDenseBlock_5C(nn.Module):
@@ -45,12 +46,16 @@ class RRDB(nn.Module):
 
 
 class RRDBNet(nn.Module):
-    def __init__(self, in_nc, out_nc, nf, nb, gc=32):
+    def __init__(self, in_nc, out_nc, nf, nb, gc=32, differential=False):
         super(RRDBNet, self).__init__()
-        RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
 
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
-        self.RRDB_trunk = mutil.make_layer(RRDB_block_f, nb)
+        if differential:
+            self.RRDB_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False))
+            mutil.initialize_weights(self.RRDB_trunk.odefunc.convs)
+        else:
+            RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
+            self.RRDB_trunk = mutil.make_layer(RRDB_block_f, nb)
         self.trunk_conv = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
         #### upsampling
         self.upconv1 = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)

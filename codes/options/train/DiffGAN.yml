@@ -1,5 +1,5 @@
 #### general settings
-name: DiffMSRResnet
+name: Diff_ESRGAN_x4_BSD_5blocks_test
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -34,11 +34,11 @@ datasets:
     mode: LQGT
     dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
     dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
-    batch_size: 64
+    batch_size: 16
 
 #### network structures
 network_G:
-  which_model_G: MSRResNet
+  which_model_G: RRDBNet
   in_nc: 3
   out_nc: 3
   nf: 64
@@ -57,7 +57,7 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
-  G_pretraining: 0
+  G_pretraining: 1
   lr_G: !!float 1e-4
   weight_decay_G: 0
   beta1_G: 0.9
@@ -68,11 +68,11 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  nepochs: 20
+  nepochs: 2
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
-  epoch_patience: 3
+  epoch_patience: 5
 
   pixel_criterion: l1
   pixel_weight: !!float 1e-2
@@ -85,7 +85,7 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: !!float 2e0
+  val_freq: !!float 1e0
 
 #### logger
 logger:

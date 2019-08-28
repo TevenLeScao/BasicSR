@@ -156,6 +156,7 @@ def main():
     best_niqe = 1e10
     best_psnr = 0
     patience = 0
+    all_results = []
     for epoch in range(start_epoch, total_epochs):
         if pretraining_epochs > 0:
             if epoch == 0:
@@ -227,6 +228,7 @@ def main():
 
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx
+            all_results.append((avg_psnr, avg_niqe))
 
             if avg_niqe > best_niqe and avg_psnr < best_niqe:
                 patience += 1
@@ -258,6 +260,7 @@ def main():
         logger.info('Saving the final model.')
         model.save('latest')
         logger.info('End of training.')
+        json.dump(all_results, open(os.path.join(opt['path']['log'], 'validation_results.json'), 'w'), indent=2)
 
 
 if __name__ == '__main__':

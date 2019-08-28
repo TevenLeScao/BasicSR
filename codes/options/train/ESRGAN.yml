@@ -1,5 +1,5 @@
 #### general settings
-name: RRDB_ESRGAN_x4_BSD_5blocks
+name: RRDB_ESRGAN_x4_BSD_5blocks_test
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -66,7 +66,7 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
-  G_pretraining: 10
+  G_pretraining: 1
   lr_G: !!float 1e-4
   weight_decay_G: 0
   beta1_G: 0.9
@@ -77,7 +77,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  nepochs: 50
+  nepochs: 2
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5

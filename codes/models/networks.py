@@ -21,7 +21,7 @@ def define_G(opt):
                                        differential=opt_net['diff'])
     elif which_model == 'RRDBNet':
         netG = RRDBNet_arch.RRDBNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
-                                    nf=opt_net['nf'], nb=opt_net['nb'])
+                                    nf=opt_net['nf'], nb=opt_net['nb'], differential=opt_net['diff'])
     # elif which_model == 'sft_arch':  # SFT-GAN
     #     netG = sft_arch.SFT_Net()
     else:
