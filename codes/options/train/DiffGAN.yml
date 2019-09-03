@@ -1,5 +1,5 @@
 #### general settings
-name: Diff_ESRGAN_x4_DIV_5AugRK2_interpolated
+name: Diff_BSD_5Aug_interpolated_test
 use_tb_logger: true
 model: srgan
 distortion: sr
