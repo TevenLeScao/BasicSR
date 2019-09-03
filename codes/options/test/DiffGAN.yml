@@ -26,7 +26,7 @@ network_G:
   nf: 64
   nb: 5
   upscale: 4
-  diff: true
+  diff: checkpointed
 
 #### path
 path:

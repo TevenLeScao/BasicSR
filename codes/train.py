@@ -28,7 +28,7 @@ def init_dist(backend='nccl', **kwargs):
     dist.init_process_group(backend=backend, **kwargs)
 
 
-def main():
+def train():
     #### options
     parser = argparse.ArgumentParser()
     parser.add_argument('-opt', type=str, help='Path to option YMAL file.')
@@ -264,4 +264,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    train()

@@ -47,7 +47,6 @@ network_G:
   nf: 64
   nb: 16
   upscale: 4
-  diff: False
 
 #### path
 path:

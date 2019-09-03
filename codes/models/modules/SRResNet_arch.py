@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import models.modules.module_util as mutil
+from anode.anode.odeblock import make_odeblock
+from anode.models.sr_trunk import SRTrunk
 from torchdiffeq._impl.conv import ODEBlock, ODEfunc
 
 
@@ -14,12 +16,17 @@ class MSRResNet(nn.Module):
         self.upscale = upscale
 
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
-        if differential:
+        if differential == "checkpointed":
+            self.recon_trunk = SRTrunk(nf, nb, make_odeblock(2, 'RK4'))
+            mutil.initialize_weights(self.recon_trunk.odefunc.convs)
+        elif differential == "standard":
             self.recon_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False))
             mutil.initialize_weights(self.recon_trunk.odefunc.convs)
-        else:
+        elif differential is None:
             basic_block = functools.partial(mutil.ResidualBlock_noBN, nf=nf)
             self.recon_trunk = mutil.make_layer(basic_block, nb)
+        else:
+            raise NotImplementedError("unrecognized differential system passed")
 
         # upsampling
         if self.upscale == 2:

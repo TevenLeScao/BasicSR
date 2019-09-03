@@ -43,7 +43,6 @@ network_G:
   out_nc: 3
   nf: 64
   nb: 1
-  diff: false
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3

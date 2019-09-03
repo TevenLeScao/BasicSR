@@ -47,7 +47,6 @@ network_G:
   nf: 64
   nb: 16
   upscale: 4
-  diff: False
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3
