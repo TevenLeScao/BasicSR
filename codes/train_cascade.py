@@ -15,20 +15,84 @@ from utils import util
 from utils.progress_bar import progress_bar
 from data import create_dataloader, create_dataset
 from models import create_model
+from train import init_dist
 
 
-def init_dist(backend='nccl', **kwargs):
-    # initialization for distributed training
-    if mp.get_start_method(allow_none=True) != 'spawn':
-        mp.set_start_method('spawn')
-    rank = int(os.environ['RANK'])
-    num_gpus = torch.cuda.device_count()
-    torch.cuda.set_device(rank % num_gpus)
-    dist.init_process_group(backend=backend, **kwargs)
+def train():
+    #### options
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-opt', type=str, help='Path to option YAML file.')
+    parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
+                        help='job launcher')
+    parser.add_argument('--local_rank', type=int, default=0)
+    args = parser.parse_args()
+    opt = option.parse(args.opt, is_train=True)
 
+    #### distributed training settings
+    if args.launcher == 'none':  # disabled distributed training
+        opt['dist'] = False
+        rank = -1
+        print('Disabled distributed training.')
+    else:
+        opt['dist'] = True
+        init_dist()
+        world_size = torch.distributed.get_world_size()
+        rank = torch.distributed.get_rank()
 
-def create_loaders(opt, logger):
-    # create train and val dataloader
+    #### loading resume state if exists
+    if opt['path'].get('resume_state', None):
+        # distributed resuming: all load into default GPU
+        device_id = torch.cuda.current_device()
+        resume_state = torch.load(opt['path']['resume_state'],
+                                  map_location=lambda storage, loc: storage.cuda(device_id))
+        option.check_resume(opt, resume_state['iter'])  # check resume options
+    else:
+        resume_state = None
+
+    #### mkdir and loggers
+    if rank <= 0:  # normal training (rank -1) OR distributed training (rank 0)
+        if resume_state is None:
+            util.mkdir_and_rename(
+                opt['path']['experiments_root'])  # rename experiment folder if exists
+            util.mkdirs((path for key, path in opt['path'].items() if not key == 'experiments_root'
+                         and 'pretrain_model' not in key and 'resume' not in key))
+
+        # config loggers. Before it, the log will not work
+        util.setup_logger('base', opt['path']['log'], 'train_' + opt['name'], level=logging.INFO,
+                          screen=True, tofile=True)
+        util.setup_logger('val', opt['path']['log'], 'val_' + opt['name'], level=logging.INFO,
+                          screen=True, tofile=True)
+        logger = logging.getLogger('base')
+        logger.info(option.dict2str(opt))
+        # tensorboard logger
+        if opt['use_tb_logger'] and 'debug' not in opt['name']:
+            version = float(torch.__version__[0:3])
+            if version >= 1.1:  # PyTorch 1.1
+                from torch.utils.tensorboard import SummaryWriter
+            else:
+                logger.info(
+                    'You are using PyTorch {}. Tensorboard will use [tensorboardX]'.format(version))
+                from tensorboardX import SummaryWriter
+            tb_logger = SummaryWriter(log_dir='../tb_logger/' + opt['name'])
+    else:
+        util.setup_logger('base', opt['path']['log'], 'train', level=logging.INFO, screen=True)
+        logger = logging.getLogger('base')
+
+    # convert to NoneDict, which returns None for missing keys
+    opt = option.dict_to_nonedict(opt)
+
+    #### random seed
+    seed = opt['train']['manual_seed']
+    if seed is None:
+        seed = random.randint(1, 10000)
+    if rank <= 0:
+        logger.info('Random seed: {}'.format(seed))
+    util.set_random_seed(seed)
+
+    torch.backends.cudnn.benchmark = True
+    # torch.backends.cudnn.deterministic = True
+
+    #### create train and val dataloader
     dataset_ratio = 200  # enlarge the size of each epoch
     for phase, dataset_opt in opt['datasets'].items():
         if phase == 'train':
@@ -54,14 +118,11 @@ def create_loaders(opt, logger):
         else:
             raise NotImplementedError('Phase [{:s}] is not recognized.'.format(phase))
     assert train_loader is not None
-    return train_loader, val_loader, train_sampler
 
-
-def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=None, tb_logger=None):
-    # create model
+    #### create model
     model = create_model(opt)
 
-    # resume training
+    #### resume training
     if resume_state:
         logger.info('Resuming training from epoch: {}, iter: {}.'.format(
             resume_state['epoch'], resume_state['iter']))
@@ -73,15 +134,15 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
         current_step = 0
         start_epoch = 0
 
+    #### training
     try:
         if opt['train']['G_pretraining'] >= 1:
             pretraining_epochs = opt['train']['G_pretraining']
         else:
             pretraining_epochs = 0
-    except (KeyError, TypeError):
+    except KeyError:
         pretraining_epochs = 0
     logger.info('Start training from epoch: {:d}, iter: {:d}'.format(start_epoch, current_step))
-    total_epochs = int(opt['train']['nepochs'])
     best_niqe = 1e10
     best_psnr = 0
     patience = 0
@@ -96,16 +157,16 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
             train_sampler.set_epoch(epoch)
         for batch_num, train_data in enumerate(train_loader):
             current_step += 1
-            # update learning rate
+            #### update learning rate
             model.update_learning_rate(current_step, warmup_iter=opt['train']['warmup_iter'])
 
-            # training
+            #### training
             model.feed_data(train_data)
             model.optimize_parameters(epoch, current_step)
 
             progress_bar(batch_num, len(train_loader), msg=None)
 
-        # log
+        #### log
         if epoch % opt['logger']['print_freq'] == 0:
             logs = model.get_current_log()
             message = '<epoch:{:3d}, iter:{:8,d}, lr:{:.3e}> '.format(
@@ -134,8 +195,7 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
 
                 visuals = model.get_current_visuals()
                 sr_img = util.tensor2img(visuals['SR'])  # uint8
-                # ground truth image
-                # gt_img = util.tensor2img(visuals['GT'])  # uint8
+                gt_img = util.tensor2img(visuals['GT'])  # uint8
 
                 # Save SR images for reference
                 save_img_path = os.path.join(img_dir,
@@ -160,14 +220,14 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
             avg_niqe = avg_niqe / idx
             all_results.append((avg_psnr, avg_niqe))
 
-            if avg_niqe > best_niqe and avg_psnr < best_psnr:
+            if avg_niqe > best_niqe and avg_psnr < best_niqe:
                 patience += 1
                 if patience == opt['train']['epoch_patience']:
                     break
 
             if avg_niqe < best_niqe:
                 best_niqe = avg_niqe
-                # save models and training states
+                #### save models and training states
                 if rank <= 0:
                     logger.info('Saving models and training states.')
                     model.save(current_step)
@@ -185,6 +245,7 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
             if opt['use_tb_logger'] and 'debug' not in opt['name']:
                 tb_logger.add_scalar('psnr', avg_psnr, current_step)
 
+
     if rank <= 0:
         logger.info('Saving the final model.')
         model.save('latest')
@@ -192,99 +253,5 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
         json.dump(all_results, open(os.path.join(opt['path']['log'], 'validation_results.json'), 'w'), indent=2)
 
 
-def get_resume_state(opt):
-    # loading resume state if exists
-    if opt['path'].get('resume_state', None):
-        # distributed resuming: all load into default GPU
-        device_id = torch.cuda.current_device()
-        resume_state = torch.load(opt['path']['resume_state'],
-                                  map_location=lambda storage, loc: storage.cuda(device_id))
-        option.check_resume(opt, resume_state['iter'])  # check resume options
-    else:
-        resume_state = None
-    return resume_state
-
-
-def setup_logging(opt, resume_state):
-    tb_logger = None
-    if rank <= 0:  # normal training (rank -1) OR distributed training (rank 0)
-        if resume_state is None:
-            util.mkdir_and_rename(
-                opt['path']['experiments_root'])  # rename experiment folder if exists
-            util.mkdirs((path for key, path in opt['path'].items() if not key == 'experiments_root'
-                         and 'pretrain_model' not in key and 'resume' not in key))
-
-        # config loggers. Before it, the log will not work
-        util.setup_logger('base', opt['path']['log'], 'train_' + opt['name'], level=logging.INFO,
-                          screen=True, tofile=True)
-        util.setup_logger('val', opt['path']['log'], 'val_' + opt['name'], level=logging.INFO,
-                          screen=True, tofile=True)
-        logger = logging.getLogger('base')
-        logger.info(option.dict2str(opt))
-        # tensorboard logger
-        if opt['use_tb_logger'] and 'debug' not in opt['name']:
-            version = float(torch.__version__[0:3])
-            if version >= 1.1:  # PyTorch 1.1
-                from torch.utils.tensorboard import SummaryWriter
-            else:
-                logger.info(
-                    'You are using PyTorch {}. Tensorboard will use [tensorboardX]'.format(version))
-                from tensorboardX import SummaryWriter
-            tb_logger = SummaryWriter(log_dir='../tb_logger/' + opt['name'])
-    else:
-        util.setup_logger('base', opt['path']['log'], 'train', level=logging.INFO, screen=True)
-        logger = logging.getLogger('base')
-    return logger, tb_logger
-
-
-def training_harness(opt):
-    resume_state = get_resume_state(opt)
-
-    # mkdir and loggers
-    logger, tb_logger = setup_logging(opt, resume_state)
-
-    # convert to NoneDict, which returns None for missing keys
-    opt = option.dict_to_nonedict(opt)
-
-    # random seed
-    seed = opt['train']['manual_seed']
-    if seed is None:
-        seed = random.randint(1, 10000)
-    if rank <= 0:
-        logger.info('Random seed: {}'.format(seed))
-    util.set_random_seed(seed)
-
-    torch.backends.cudnn.benchmark = True
-    # torch.backends.cudnn.deterministic = True
-
-    # loaders
-    train_loader, val_loader, train_sampler = create_loaders(opt, logger)
-
-    # training
-    train(opt, train_loader, val_loader, train_sampler, logger, resume_state, tb_logger)
-
-
 if __name__ == '__main__':
-
-    # options
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-opt', type=str, help='Path to option YAML file.')
-    parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
-                        help='job launcher')
-    parser.add_argument('--local_rank', type=int, default=0)
-    args = parser.parse_args()
-    raw_opt = option.load_yaml(args.opt)
-    parsed_opt = option.parse_raw(raw_opt, is_train=True)
-
-    # distributed training settings
-    if args.launcher == 'none':  # disabled distributed training
-        parsed_opt['dist'] = False
-        rank = -1
-        print('Disabled distributed training.')
-    else:
-        parsed_opt['dist'] = True
-        init_dist()
-        world_size = torch.distributed.get_world_size()
-        rank = torch.distributed.get_rank()
-
-    training_harness(parsed_opt)
+    train()

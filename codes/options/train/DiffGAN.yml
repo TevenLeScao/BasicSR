@@ -53,7 +53,7 @@ network_D:
 path:
   pretrain_model_G: null
   strict_load: true
-  resume_state: ~
+  resume_state: null
 
 #### training settings: learning rate scheme, loss
 train:
@@ -72,7 +72,7 @@ train:
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
-  epoch_patience: 5
+  epoch_patience: null
 
   pixel_criterion: l1
   pixel_weight: !!float 1e-2
