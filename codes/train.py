@@ -27,7 +27,7 @@ def init_dist(backend='nccl', **kwargs):
     dist.init_process_group(backend=backend, **kwargs)
 
 
-def create_loaders(opt, logger):
+def create_loaders(opt, logger, rank):
     # create train and val dataloader
     dataset_ratio = 200  # enlarge the size of each epoch
     for phase, dataset_opt in opt['datasets'].items():
@@ -57,7 +57,7 @@ def create_loaders(opt, logger):
     return train_loader, val_loader, train_sampler
 
 
-def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=None, tb_logger=None):
+def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_state=None, tb_logger=None, rank=-1):
     # create model
     model = create_model(opt)
 
@@ -85,12 +85,15 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
     best_niqe = 1e10
     best_psnr = 0
     patience = 0
+    pretraining = False
     all_results = []
     for epoch in range(start_epoch, total_epochs):
         if pretraining_epochs > 0:
             if epoch == 0:
+                pretraining = True
                 logger.info('Starting pretraining.')
             if epoch == pretraining_epochs:
+                pretraining = False
                 logger.info('Pretraining done, adding feature and discriminator loss.')
         if opt['dist']:
             train_sampler.set_epoch(epoch)
@@ -101,7 +104,7 @@ def train(opt, train_loader, val_loader, train_sampler, logger, resume_state=Non
 
             # training
             model.feed_data(train_data)
-            model.optimize_parameters(epoch, current_step)
+            model.optimize_parameters(current_step, pretraining=pretraining)
 
             progress_bar(batch_num, len(train_loader), msg=None)
 
@@ -205,7 +208,7 @@ def get_resume_state(opt):
     return resume_state
 
 
-def setup_logging(opt, resume_state):
+def setup_logging(opt, resume_state, rank):
     tb_logger = None
     if rank <= 0:  # normal training (rank -1) OR distributed training (rank 0)
         if resume_state is None:
@@ -237,11 +240,11 @@ def setup_logging(opt, resume_state):
     return logger, tb_logger
 
 
-def training_harness(opt):
+def training_harness(opt, rank, training_function=train_main):
     resume_state = get_resume_state(opt)
 
     # mkdir and loggers
-    logger, tb_logger = setup_logging(opt, resume_state)
+    logger, tb_logger = setup_logging(opt, resume_state, rank)
 
     # convert to NoneDict, which returns None for missing keys
     opt = option.dict_to_nonedict(opt)
@@ -258,10 +261,10 @@ def training_harness(opt):
     # torch.backends.cudnn.deterministic = True
 
     # loaders
-    train_loader, val_loader, train_sampler = create_loaders(opt, logger)
+    train_loader, val_loader, train_sampler = create_loaders(opt, logger, rank)
 
     # training
-    train(opt, train_loader, val_loader, train_sampler, logger, resume_state, tb_logger)
+    training_function(opt, train_loader, val_loader, train_sampler, logger, resume_state, tb_logger, rank)
 
 
 if __name__ == '__main__':
@@ -287,4 +290,4 @@ if __name__ == '__main__':
         world_size = torch.distributed.get_world_size()
         rank = torch.distributed.get_rank()
 
-    training_harness(parsed_opt)
+    training_harness(parsed_opt, rank)

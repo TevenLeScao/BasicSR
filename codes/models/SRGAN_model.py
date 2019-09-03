@@ -40,10 +40,6 @@ class SRGANModel(BaseModel):
         # define losses, optimizer and scheduler
         if self.is_train:
             # G pixel loss
-            if train_opt['G_pretraining'] >= 1:
-                self.pretraining_epochs = train_opt['G_pretraining']
-            else:
-                self.pretraining_epochs = 0
             if train_opt['pixel_weight'] > 0:
                 l_pix_type = train_opt['pixel_criterion']
                 if l_pix_type == 'l1':
@@ -139,7 +135,7 @@ class SRGANModel(BaseModel):
             input_ref = data['ref'] if 'ref' in data else data['GT']
             self.var_ref = input_ref.to(self.device)
 
-    def optimize_parameters(self, epoch, step):
+    def optimize_parameters(self, step, pretraining=False, discriminator=True):
         # G
         for p in self.netD.parameters():
             p.requires_grad = False
@@ -153,7 +149,7 @@ class SRGANModel(BaseModel):
                 l_g_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
                 l_g_total = l_g_pix + l_g_total
 
-            if epoch >= self.pretraining_epochs:
+            if not pretraining:
                 if self.cri_fea:  # feature loss
                     real_fea = self.netF(self.real_H).detach()
                     fake_fea = self.netF(self.fake_H)
@@ -172,40 +168,41 @@ class SRGANModel(BaseModel):
 
             l_g_total.backward()
             self.optimizer_G.step()
-
         # D
-        for p in self.netD.parameters():
-            p.requires_grad = True
+        if discriminator:
+            for p in self.netD.parameters():
+                p.requires_grad = True
 
-        self.optimizer_D.zero_grad()
-        l_d_total = 0
-        pred_d_real = self.netD(self.var_ref)
-        pred_d_fake = self.netD(self.fake_H.detach())  # detach to avoid BP to G
-        if self.opt['train']['gan_type'] == 'gan':
-            l_d_real = self.cri_gan(pred_d_real, True)
-            l_d_fake = self.cri_gan(pred_d_fake, False)
-            l_d_total = l_d_real + l_d_fake
-        elif self.opt['train']['gan_type'] == 'ragan':
-            l_d_real = self.cri_gan(pred_d_real - torch.mean(pred_d_fake), True)
-            l_d_fake = self.cri_gan(pred_d_fake - torch.mean(pred_d_real), False)
-            l_d_total = (l_d_real + l_d_fake) / 2
+            self.optimizer_D.zero_grad()
+            l_d_total = 0
+            pred_d_real = self.netD(self.var_ref)
+            pred_d_fake = self.netD(self.fake_H.detach())  # detach to avoid BP to G
+            if self.opt['train']['gan_type'] == 'gan':
+                l_d_real = self.cri_gan(pred_d_real, True)
+                l_d_fake = self.cri_gan(pred_d_fake, False)
+                l_d_total = l_d_real + l_d_fake
+            elif self.opt['train']['gan_type'] == 'ragan':
+                l_d_real = self.cri_gan(pred_d_real - torch.mean(pred_d_fake), True)
+                l_d_fake = self.cri_gan(pred_d_fake - torch.mean(pred_d_real), False)
+                l_d_total = (l_d_real + l_d_fake) / 2
 
-        l_d_total.backward()
-        self.optimizer_D.step()
+            l_d_total.backward()
+            self.optimizer_D.step()
 
         # set log
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
             if self.cri_pix:
                 self.log_dict['l_g_pix'] = l_g_pix.item()
-            if epoch >= self.pretraining_epochs:
+            if not pretraining:
                 if self.cri_fea:
                     self.log_dict['l_g_fea'] = l_g_fea.item()
                 self.log_dict['l_g_gan'] = l_g_gan.item()
 
-        self.log_dict['l_d_real'] = l_d_real.item()
-        self.log_dict['l_d_fake'] = l_d_fake.item()
-        self.log_dict['D_real'] = torch.mean(pred_d_real.detach())
-        self.log_dict['D_fake'] = torch.mean(pred_d_fake.detach())
+        if discriminator:
+            self.log_dict['l_d_real'] = l_d_real.item()
+            self.log_dict['l_d_fake'] = l_d_fake.item()
+            self.log_dict['D_real'] = torch.mean(pred_d_real.detach())
+            self.log_dict['D_fake'] = torch.mean(pred_d_fake.detach())
 
     def test(self):
         self.netG.eval()
