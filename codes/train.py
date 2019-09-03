@@ -266,6 +266,8 @@ def training_harness(opt, rank, training_function=train_main):
     # training
     training_function(opt, train_loader, val_loader, train_sampler, logger, resume_state, tb_logger, rank)
 
+    logger.handlers.clear()
+
 
 if __name__ == '__main__':
 

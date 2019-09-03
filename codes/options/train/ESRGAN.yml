@@ -9,14 +9,14 @@ gpu_ids: [0]
 #### datasets
 datasets:
   train:
-#    name: DIV2K
-#    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
-    name: BSD
+    name: DIV2K
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
+#    name: BSD
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/urban100_train_bicLRx4/HR/x4.lmdb
@@ -30,14 +30,14 @@ datasets:
     use_rot: true
     color: RGB
   val:
-#    name: DIV2K_val
-#    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
-    name: BSD_val
+    name: DIV2K_val
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+#    name: BSD_val
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
@@ -65,7 +65,7 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
-  G_pretraining: 20
+  G_pretraining: 4
   lr_G: !!float 1e-4
   weight_decay_G: 0
   beta1_G: 0.9
@@ -76,11 +76,11 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
 
-  nepochs: 100
+  nepochs: 10
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
-  epoch_patience: null
+  epoch_patience: 2
 
   pixel_criterion: l1
   pixel_weight: !!float 1e-2

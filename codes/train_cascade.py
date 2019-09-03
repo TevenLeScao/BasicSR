@@ -123,10 +123,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     raw_opt = option.load_yaml(args.opt)
     raw_opt['train']['G_pretraining'] = raw_opt['train']['nepochs']
+    original_name = raw_opt['name']
 
     for cascade_width in [2, 4, 8, 16, 32, 64]:
         raw_opt['network_G']['nf'] = cascade_width
-        raw_opt['name'] = raw_opt['name'] + '_cascade_{}'.format(cascade_width)
+        raw_opt['name'] = original_name + '_cascade_{}'.format(cascade_width)
         parsed_opt = option.parse_raw(raw_opt, is_train=True)
 
         # distributed training settings
