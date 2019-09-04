@@ -33,17 +33,22 @@ if __name__ == "__main__":
     parser.add_argument('--clas_name', type=str, default=None, required=False, help='Clas model name.')
 
     args = parser.parse_args()
+    diff_path, clas_path = None, None
 
-    if args.diff_opt is not None and args.clas_opt is not None:
+    if args.diff_opt is not None:
         diff_opt = option.parse(args.diff_opt, is_train=True)
         diff_opt = option.dict_to_nonedict(diff_opt)
+        diff_path = diff_opt['path']['log']
+    if args.clas_opt is not None:
         clas_opt = option.parse(args.clas_opt, is_train=True)
         clas_opt = option.dict_to_nonedict(clas_opt)
-        diff_path = diff_opt['path']['log']
         clas_path = clas_opt['path']['log']
-    else:
+    if args.diff_path is not None:
         diff_path = osp.abspath(osp.join(__file__, osp.pardir, osp.pardir, "experiments", args.diff_name))
+    if args.clas_path is not None:
         clas_path = osp.abspath(osp.join(__file__, osp.pardir, osp.pardir, "experiments", args.clas_name))
+
+    assert diff_path is not None and clas_path is not None
 
     diff_results = json.load(open(osp.join(diff_path, 'validation_results.json')))
     clas_results = json.load(open(osp.join(clas_path, 'validation_results.json')))

@@ -1,5 +1,5 @@
 #### general settings
-name: RRDB_BSD_5blocks_interpolated
+name: RRDB_DIV_5blocks_interpolated
 use_tb_logger: true
 model: srgan
 distortion: sr

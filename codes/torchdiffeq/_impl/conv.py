@@ -100,13 +100,12 @@ class ODEfunc(nn.Module):
 
 class StaticODEfunc(nn.Module):
 
-    def __init__(self, dim, nb, normalization=True, time_dependent=False):
+    def __init__(self, dim, nb, normalization=True):
         super(StaticODEfunc, self).__init__()
         self.normalization = normalization
         self.relu = nn.ReLU(inplace=False)
         self.nb = nb
-        for _ in range(nb):
-            self.convs = nn.ModuleList([nn.Conv2d(dim, dim, 3, 1, 1) for _ in range(nb)])
+        self.convs = nn.ModuleList([nn.Conv2d(dim, dim, 3, 1, 1) for _ in range(nb)])
         if self.normalization:
             self.norms = nn.ModuleList([norm(dim) for _ in range(nb + 1)])
         self.nfe = 0
@@ -123,6 +122,37 @@ class StaticODEfunc(nn.Module):
             if self.normalization:
                 out = self.norms[i](out)
         return out
+
+
+class DenseODEfunc(nn.Module):
+
+    def __init__(self, dim=64, growth=32, nb=5, bias=True, normalization=True):
+        super(DenseODEfunc, self).__init__()
+        self.normalization = normalization
+        self.nb = nb
+        assert nb > 0
+        self.convs = nn.ModuleList([nn.Conv2d(dim + growth*conv_index, dim + growth*(conv_index+1), 3, 1, 1, bias=bias) for conv_index in range(nb-1)])
+        self.final_conv = nn.Conv2d(dim + growth*(nb-1), dim, 3, 1, 1, bias=bias)
+        if self.normalization:
+            self.norms = nn.ModuleList([norm(dim + growth*conv_index) for conv_index in range(nb + 1)])
+        self.nfe = 0
+        self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=False)
+
+    def forward(self, x):
+        self.nfe += 1
+        if self.normalization:
+            out = self.norms[-1](x)
+            out = self.lrelu(out)
+        else:
+            out = self.lrelu(x)
+        for i in range(self.nb-1):
+            out = self.convs[i](out)
+            if self.normalization:
+                out = self.norms[i](out)
+            out = self.lrelu(out)
+        out = self.final_conv(out)
+        out = self.lrelu(out)
+        return out * 0.2 + x
 
 
 class ODEBlock(nn.Module):
