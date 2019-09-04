@@ -43,9 +43,9 @@ if __name__ == "__main__":
         clas_opt = option.parse(args.clas_opt, is_train=True)
         clas_opt = option.dict_to_nonedict(clas_opt)
         clas_path = clas_opt['path']['log']
-    if args.diff_path is not None:
+    if args.diff_name is not None:
         diff_path = osp.abspath(osp.join(__file__, osp.pardir, osp.pardir, "experiments", args.diff_name))
-    if args.clas_path is not None:
+    if args.clas_name is not None:
         clas_path = osp.abspath(osp.join(__file__, osp.pardir, osp.pardir, "experiments", args.clas_name))
 
     assert diff_path is not None and clas_path is not None
