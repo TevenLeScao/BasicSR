@@ -1,5 +1,5 @@
 #### general settings
-name: Diff_DIV_5Aug_dense_interpolated
+name: Diff_DIV_5blocks_interpolated_timeindependent
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -43,7 +43,7 @@ network_G:
   out_nc: 3
   nf: 64
   nb: 5
-  diff: checkpointed
+  diff: standard
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3

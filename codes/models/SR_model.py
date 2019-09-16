@@ -166,5 +166,5 @@ class SRModel(BaseModel):
             logger.info('Loading model for G [{:s}] ...'.format(load_path_G))
             self.load_network(load_path_G, self.netG, self.opt['path']['strict_load'])
 
-    def save(self, iter_label):
-        self.save_network(self.netG, 'G', iter_label)
+    def save(self, epoch):
+        self.save_network(self.netG, 'G', epoch)

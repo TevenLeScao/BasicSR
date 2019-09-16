@@ -260,6 +260,6 @@ class SFTGAN_ACD_Model(BaseModel):
             logger.info('Loading pretrained model for D [{:s}] ...'.format(load_path_D))
             self.load_network(load_path_D, self.netD, self.opt['path']['strict_load'])
 
-    def save(self, iter_step):
-        self.save_network(self.netG, 'G', iter_step)
-        self.save_network(self.netD, 'D', iter_step)
+    def save(self, epoch):
+        self.save_network(self.netG, 'G', epoch)
+        self.save_network(self.netD, 'D', epoch)

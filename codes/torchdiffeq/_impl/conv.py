@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
-from torchdiffeq import odeint_adjoint as odeint
-# from torchdiffeq import odeint
+# from torchdiffeq import odeint_adjoint as odeint
+from torchdiffeq import odeint
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -110,7 +110,7 @@ class StaticODEfunc(nn.Module):
             self.norms = nn.ModuleList([norm(dim) for _ in range(nb + 1)])
         self.nfe = 0
 
-    def forward(self, x):
+    def forward(self, t, x):
         self.nfe += 1
         if self.normalization:
             out = self.norms[-1](x)
@@ -138,7 +138,7 @@ class DenseODEfunc(nn.Module):
         self.nfe = 0
         self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=False)
 
-    def forward(self, x):
+    def forward(self, t, x):
         self.nfe += 1
         if self.normalization:
             out = self.norms[-1](x)
@@ -164,7 +164,7 @@ class ODEBlock(nn.Module):
 
     def forward(self, x):
         self.integration_time = self.integration_time.type_as(x)
-        out = odeint(self.odefunc, x, self.integration_time, rtol=1e-3, atol=1e-3)
+        out = odeint(self.odefunc, x, self.integration_time, rtol=1e-4, atol=1e-4)
         return out[1]
 
     @property

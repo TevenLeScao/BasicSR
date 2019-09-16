@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import models.modules.module_util as mutil
 from anode.anode.odeblock import make_odeblock
 from anode.models.sr_trunk import SRTrunk
-from torchdiffeq._impl.conv import ODEBlock, ODEfunc
+from torchdiffeq._impl.conv import ODEBlock, ODEfunc, StaticODEfunc
 
 
 class ResidualDenseBlock_5C(nn.Module):
@@ -53,14 +53,14 @@ class RRDBNet(nn.Module):
 
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
         if differential == "checkpointed":
-            self.RRDB_trunk = SRTrunk(nf, nb, make_odeblock(5, 'RK4'))
-            mutil.initialize_weights(self.RRDB_trunk.odefunc.convs)
+            self.conv_trunk = SRTrunk(nf, nb, make_odeblock(5, 'RK4'))
+            mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential == "standard":
-            self.RRDB_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False))
-            mutil.initialize_weights(self.RRDB_trunk.odefunc.convs)
+            self.conv_trunk = ODEBlock(StaticODEfunc(nf, nb=nb, normalization=False))
+            mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential is None:
             RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
-            self.RRDB_trunk = mutil.make_layer(RRDB_block_f, nb)
+            self.conv_trunk = mutil.make_layer(RRDB_block_f, nb)
         else:
             raise NotImplementedError("unrecognized differential system passed")
         self.trunk_conv = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
@@ -74,7 +74,7 @@ class RRDBNet(nn.Module):
 
     def forward(self, x, interpolation_start=True):
         fea = self.conv_first(x)
-        trunk = self.trunk_conv(self.RRDB_trunk(fea))
+        trunk = self.trunk_conv(self.conv_trunk(fea))
         fea = fea + trunk
         fea = self.lrelu(self.upconv1(F.interpolate(fea, scale_factor=2, mode='nearest')))
         fea = self.lrelu(self.upconv2(F.interpolate(fea, scale_factor=2, mode='nearest')))

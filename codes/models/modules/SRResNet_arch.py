@@ -17,14 +17,14 @@ class MSRResNet(nn.Module):
 
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
         if differential == "checkpointed":
-            self.recon_trunk = SRTrunk(nf, nb, make_odeblock(2, 'RK4'))
-            mutil.initialize_weights(self.recon_trunk.odefunc.convs)
+            self.conv_trunk = SRTrunk(nf, nb, make_odeblock(2, 'RK4'))
+            mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential == "standard":
-            self.recon_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False))
-            mutil.initialize_weights(self.recon_trunk.odefunc.convs)
+            self.conv_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False))
+            mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential is None:
             basic_block = functools.partial(mutil.ResidualBlock_noBN, nf=nf)
-            self.recon_trunk = mutil.make_layer(basic_block, nb)
+            self.conv_trunk = mutil.make_layer(basic_block, nb)
         else:
             raise NotImplementedError("unrecognized differential system passed")
 
@@ -54,7 +54,7 @@ class MSRResNet(nn.Module):
     def forward(self, x):
         convd = self.conv_first(x)
         fea = self.lrelu(convd)
-        out = self.recon_trunk(fea)
+        out = self.conv_trunk(fea)
 
         if self.upscale == 4:
             out = self.lrelu(self.pixel_shuffle(self.upconv1(out)))

@@ -10,12 +10,11 @@ import torch.distributed as dist
 import options.options as option
 from utils import util
 from utils.progress_bar import progress_bar
-from data import create_dataloader, create_dataset
 from models import create_model
-from train import init_dist, training_harness
+from train import init_dist, train_harness
 
 
-def train_psnr(opt, train_loader, val_loader, train_sampler, logger, resume_state=None, tb_logger=None, rank=-1):
+def psnr_main(opt, train_loader, val_loader, train_sampler, logger, resume_state=None, tb_logger=None, rank=-1):
     # create model
     model = create_model(opt)
 
@@ -141,4 +140,4 @@ if __name__ == '__main__':
             world_size = torch.distributed.get_world_size()
             rank = torch.distributed.get_rank()
 
-        training_harness(parsed_opt, rank, training_function=train_psnr)
+        train_harness(parsed_opt, rank, main_loop=psnr_main)

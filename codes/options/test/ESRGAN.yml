@@ -1,4 +1,4 @@
-name: RRDB_ESRGAN_x4_DIV
+name: RRDB_DIV_5blocks_interpolated
 suffix: ~  # add suffix to saved images
 model: sr
 distortion: sr
@@ -7,18 +7,18 @@ crop_border: ~  # crop border when evaluation. If None(~), crop the scale pixels
 gpu_ids: [0]
 
 datasets:
-#  test_1:  # the 1st test dataset
-#    name: div2k100
-#    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
-#    batch_size: 1
-  test_2:  # the 2st test dataset
-    name: BSD_val
+  test_1:  # the 1st test dataset
+    name: div2k100
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
     batch_size: 1
+#  test_2:  # the 2st test dataset
+#    name: BSD_val
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    batch_size: 1
 
 #### network structures
 network_G:
@@ -31,5 +31,5 @@ network_G:
 
 #### path
 path:
+#  pretrain_model_G: ~
   pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth
-#  pretrain_model_G: ../experiments/RRDB_ESRGAN_x4_DIV/models/latest_G.pth

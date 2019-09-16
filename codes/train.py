@@ -61,6 +61,11 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
     # create model
     model = create_model(opt)
 
+    try:
+        total_nfe = model.netG.module.conv_trunk.nfe
+    except AttributeError:
+        total_nfe = None
+
     # resume training
     if resume_state:
         logger.info('Resuming training from epoch: {}, iter: {}.'.format(
@@ -107,6 +112,13 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             model.optimize_parameters(current_step, pretraining=pretraining)
 
             progress_bar(batch_num, len(train_loader), msg=None)
+
+            # if total_nfe is not None:
+            #     last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
+            #     total_nfe = model.netG.module.conv_trunk.nfe
+            #     print('NFE: {}'.format(last_nfe))
+            # else:
+            #     last_nfe = None
 
         # log
         if epoch % opt['logger']['print_freq'] == 0:
@@ -159,6 +171,13 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
                 progress_bar(batch_num, len(val_loader), msg=None)
 
+                # if total_nfe is not None:
+                #     last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
+                #     total_nfe = model.netG.module.conv_trunk.nfe
+                #     print('NFE: {}'.format(last_nfe))
+                # else:
+                #     last_nfe = None
+
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx
             all_results.append((avg_psnr, avg_niqe))
@@ -173,7 +192,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                 # save models and training states
                 if rank <= 0:
                     logger.info('Saving models and training states.')
-                    model.save(current_step)
+                    model.save(epoch)
                     model.save_training_state(epoch, current_step)
 
             if avg_psnr > best_psnr:
@@ -240,7 +259,7 @@ def setup_logging(opt, resume_state, rank):
     return logger, tb_logger
 
 
-def training_harness(opt, rank, training_function=train_main):
+def train_harness(opt, rank, main_loop=train_main):
     resume_state = get_resume_state(opt)
 
     # mkdir and loggers
@@ -264,7 +283,7 @@ def training_harness(opt, rank, training_function=train_main):
     train_loader, val_loader, train_sampler = create_loaders(opt, logger, rank)
 
     # training
-    training_function(opt, train_loader, val_loader, train_sampler, logger, resume_state, tb_logger, rank)
+    main_loop(opt, train_loader, val_loader, train_sampler, logger, resume_state, tb_logger, rank)
 
     logger.handlers.clear()
 
@@ -292,4 +311,4 @@ if __name__ == '__main__':
         world_size = torch.distributed.get_world_size()
         rank = torch.distributed.get_rank()
 
-    training_harness(parsed_opt, rank)
+    train_harness(parsed_opt, rank)

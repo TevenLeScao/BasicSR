@@ -3,6 +3,7 @@ import os.path as osp
 import logging
 import yaml
 from utils.util import OrderedYaml
+
 Loader, Dumper = OrderedYaml()
 
 
@@ -71,6 +72,9 @@ def parse_raw(opt, is_train=True):
         results_root = osp.join(opt['path']['root'], 'results', opt['name'])
         opt['path']['results_root'] = results_root
         opt['path']['log'] = results_root
+        if opt['path']['pretrain_model_G'] is None:
+            opt['path']['pretrain_model_G'] = osp.join(opt['path']['root'], 'experiments', opt['name'], "models",
+                                                       "latest_G.pth")
 
     # network
     if opt['distortion'] == 'sr':
