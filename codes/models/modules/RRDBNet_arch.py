@@ -112,9 +112,9 @@ class RRDBNet(nn.Module):
             self.conv_trunk = ODEBlock(RRDBODEfunc(nf, nb=nb, normalization=False, time_dependent=time_dependent))
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential == "sequential":
-            self.conv_trunk = ODEBlock(nn.Sequential(*[RRDBODEfunc(nf, nb=1, normalization=False, time_dependent=time_dependent) for _ in range(nb)]))
-            for block in self.conv_trunk.odefunc:
-                mutil.initialize_weights(block.convs)
+            self.conv_trunk = nn.Sequential(*[ODEBlock(RRDBODEfunc(nf, nb=1, normalization=False, time_dependent=time_dependent)) for _ in range(nb)])
+            for block in self.conv_trunk:
+                mutil.initialize_weights(block.odefunc.convs)
         elif differential is None:
             RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
             self.conv_trunk = mutil.make_layer(RRDB_block_f, nb)
