@@ -135,7 +135,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                 logger.info(message)
 
         # batched validation
-        if epoch % opt['train']['val_freq'] == 0 and rank <= 0:
+        if epoch % opt['train']['val_freq'] == 0 and rank <= 0 and epoch >= pretraining_epochs - 1:
             avg_psnr = 0.0
             avg_niqe = 0.0
             idx = 0
@@ -164,10 +164,11 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                     idx += 1
 
                 # calculate NIQE
-                item_niqe = util.tensor_niqe(model.fake_H)
-                # item_niqe = 0
-                if math.isfinite(item_niqe):
-                    avg_niqe += item_niqe
+                if opt['niqe']:
+                    item_niqe = util.tensor_niqe(model.fake_H)
+                    # item_niqe = 0
+                    if math.isfinite(item_niqe):
+                        avg_niqe += item_niqe
 
                 progress_bar(batch_num, len(val_loader), msg=None)
 
@@ -182,6 +183,12 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             avg_niqe = avg_niqe / idx
             all_results.append((avg_psnr, avg_niqe))
 
+            # save models and training states
+            if rank <= 0 and avg_psnr > best_psnr:
+                logger.info('Saving models and training states.')
+                model.save(epoch)
+                model.save_training_state(epoch, current_step)
+
             if avg_niqe > best_niqe and avg_psnr < best_psnr:
                 patience += 1
                 if patience == opt['train']['epoch_patience']:
@@ -189,11 +196,6 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
             if avg_niqe < best_niqe:
                 best_niqe = avg_niqe
-                # save models and training states
-                if rank <= 0:
-                    logger.info('Saving models and training states.')
-                    model.save(epoch)
-                    model.save_training_state(epoch, current_step)
 
             if avg_psnr > best_psnr:
                 best_psnr = avg_psnr
@@ -206,6 +208,8 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             # tensorboard logger
             if opt['use_tb_logger'] and 'debug' not in opt['name']:
                 tb_logger.add_scalar('psnr', avg_psnr, current_step)
+
+        print('\n')
 
     if rank <= 0:
         logger.info('Saving the final model.')

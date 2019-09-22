@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import models.modules.module_util as mutil
 from anode.anode.odeblock import make_odeblock
 from anode.models.sr_trunk import SRTrunk
-from torchdiffeq._impl.conv import ODEBlock, ODEfunc, StaticODEfunc
+from torchdiffeq._impl.conv import ODEBlock, ODEfunc, StaticODEfunc, ConcatConv2d
 
 
 class ResidualDenseBlock_5C(nn.Module):
@@ -47,8 +47,61 @@ class RRDB(nn.Module):
         return out * 0.2 + x
 
 
+class TimeResidualDenseBlock5C(nn.Module):
+    def __init__(self, nf=64, gc=32, bias=True):
+        super(TimeResidualDenseBlock5C, self).__init__()
+        # gc: growth channel, i.e. intermediate channels
+        self.conv1 = ConcatConv2d(nf, gc, 3, 1, 1, bias=bias)
+        self.conv2 = ConcatConv2d(nf + gc, gc, 3, 1, 1, bias=bias)
+        self.conv3 = ConcatConv2d(nf + 2 * gc, gc, 3, 1, 1, bias=bias)
+        self.conv4 = ConcatConv2d(nf + 3 * gc, gc, 3, 1, 1, bias=bias)
+        self.conv5 = ConcatConv2d(nf + 4 * gc, nf, 3, 1, 1, bias=bias)
+        self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
+
+        # initialization
+        mutil.initialize_weights([self.conv1, self.conv2, self.conv3, self.conv4, self.conv5], 0.1)
+
+    def forward(self, t, x):
+        x1 = self.lrelu(self.conv1(t, x))
+        x2 = self.lrelu(self.conv2(t, torch.cat((x, x1), 1)))
+        x3 = self.lrelu(self.conv3(t, torch.cat((x, x1, x2), 1)))
+        x4 = self.lrelu(self.conv4(t, torch.cat((x, x1, x2, x3), 1)))
+        x5 = self.conv5(t, torch.cat((x, x1, x2, x3, x4), 1))
+        return x5 * 0.2 + x
+
+
+
+class RRDBODEfunc(nn.Module):
+
+    def __init__(self, nf=64, gc=32, nb=3, bias=True, normalization=False, time_dependent=False):
+        super(RRDBODEfunc, self).__init__()
+        self.normalization = normalization
+        self.nb = nb
+        self.time_dependent = time_dependent
+        assert nb > 0
+        if time_dependent:
+            self.convs = nn.ModuleList([TimeResidualDenseBlock5C(nf, gc, bias=bias) for _ in range(nb)])
+        else:
+            self.convs = nn.ModuleList([ResidualDenseBlock_5C(nf, gc, bias=bias) for _ in range(nb)])
+        if self.normalization:
+            self.norms = nn.ModuleList([nn.GroupNorm(nf, nf) for _ in range(nb)])
+        self.nfe = 0
+
+    def forward(self, t, x):
+        self.nfe += 1
+        out = x
+        for i in range(self.nb):
+            if self.time_dependent:
+                out = self.convs[i](t, out)
+            else:
+                out = self.convs[i](out)
+            if self.normalization:
+                out = self.norms[i](out)
+        return out * 0.2 + x
+
+
 class RRDBNet(nn.Module):
-    def __init__(self, in_nc, out_nc, nf, nb, gc=32, differential=None):
+    def __init__(self, in_nc, out_nc, nf, nb, gc=32, differential=None, time_dependent=False):
         super(RRDBNet, self).__init__()
 
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
@@ -56,7 +109,7 @@ class RRDBNet(nn.Module):
             self.conv_trunk = SRTrunk(nf, nb, make_odeblock(5, 'RK4'))
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential == "standard":
-            self.conv_trunk = ODEBlock(StaticODEfunc(nf, nb=nb, normalization=False))
+            self.conv_trunk = ODEBlock(RRDBODEfunc(nf, nb=nb, normalization=False, time_dependent=time_dependent))
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential is None:
             RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
@@ -80,8 +133,8 @@ class RRDBNet(nn.Module):
         fea = self.lrelu(self.upconv2(F.interpolate(fea, scale_factor=2, mode='nearest')))
         out = self.conv_last(self.lrelu(self.HRconv(fea)))
 
-        if interpolation_start:
-            interpolated = F.interpolate(x, scale_factor=4, mode='nearest')
-            out = out + interpolated
+        # if interpolation_start:
+        #     interpolated = F.interpolate(x, scale_factor=4, mode='nearest')
+        #     out = out + interpolated
 
         return out

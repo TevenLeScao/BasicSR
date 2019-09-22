@@ -2,12 +2,13 @@
 # With 16 Residual blocks w/o BN
 
 #### general settings
-name: 001_MSRResNetx4_scratch_DIV2K
+name: MSRResNet_3diff_PSNR
 use_tb_logger: true
 model: sr
 distortion: sr
 scale: 4
 gpu_ids: [0]
+niqe: false
 
 #### datasets
 datasets:
@@ -23,7 +24,7 @@ datasets:
 
     use_shuffle: true
     n_workers: 6  # per GPU
-    batch_size: 16
+    batch_size: 8
     GT_size: 128
     use_flip: true
     use_rot: true
@@ -37,22 +38,23 @@ datasets:
 #    mode: LQGT
 #    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
 #    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
-    batch_size: 64
+    batch_size: 8
 
 #### network structures
 network_G:
-  which_model_G: MSRResNet
+  which_model_G: RRDBNet
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 16
+  nb: 3
   upscale: 4
+  diff: standard
 
 #### path
 path:
   pretrain_model_G: ~
   strict_load: true
-  resume_state: ~
+  resume_state: ../experiments/MSRResNet_3diff_PSNR/training_state/10.state
 
 #### training settings: learning rate scheme, loss
 train:
@@ -60,13 +62,13 @@ train:
   lr_scheme: CosineAnnealingLR_Restart
   beta1: 0.9
   beta2: 0.99
-  nepochs: 20
+  nepochs: 1000
   warmup_iter: -1  # no warm up
   T_period: [250000, 250000, 250000, 250000]
   restarts: [250000, 500000, 750000]
   restart_weights: [1, 1, 1]
   eta_min: !!float 1e-7
-  epoch_patience: 5
+  epoch_patience: 10000
 
   pixel_criterion: l1
   pixel_weight: 1.0

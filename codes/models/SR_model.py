@@ -86,7 +86,7 @@ class SRModel(BaseModel):
         if need_GT:
             self.real_H = data['GT'].to(self.device)  # GT
 
-    def optimize_parameters(self, step):
+    def optimize_parameters(self, step, pretraining=False):
         self.optimizer_G.zero_grad()
         self.fake_H = self.netG(self.var_L)
         l_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)

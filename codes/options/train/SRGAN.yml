@@ -8,6 +8,7 @@ model: srgan
 distortion: sr
 scale: 4
 gpu_ids: [0]
+niqe: true
 
 #### datasets
 datasets:
