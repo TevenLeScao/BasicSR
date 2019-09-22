@@ -87,11 +87,15 @@ class SRModel(BaseModel):
             self.real_H = data['GT'].to(self.device)  # GT
 
     def optimize_parameters(self, step, pretraining=False):
-        self.optimizer_G.zero_grad()
         self.fake_H = self.netG(self.var_L)
         l_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
         l_pix.backward()
-        self.optimizer_G.step()
+        self.batches += 1
+
+        if self.batches == self.accumulate:
+            self.optimizer_G.step()
+            self.optimizer_G.zero_grad()
+            self.batches = 0
 
         # set log
         self.log_dict['l_pix'] = l_pix.item()

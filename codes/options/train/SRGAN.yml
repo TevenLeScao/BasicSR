@@ -77,6 +77,7 @@ train:
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
   epoch_patience: 5
+  accumulate: 2
 
   pixel_criterion: l1
   pixel_weight: !!float 1e-2

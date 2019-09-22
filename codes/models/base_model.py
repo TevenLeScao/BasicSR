@@ -12,6 +12,8 @@ class BaseModel:
         self.is_train = opt['is_train']
         self.schedulers = []
         self.optimizers = []
+        self.accumulate = opt['train']['accumulate']
+        self.batches = 0
 
     def feed_data(self, data):
         pass

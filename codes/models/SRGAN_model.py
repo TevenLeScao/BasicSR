@@ -136,11 +136,14 @@ class SRGANModel(BaseModel):
             self.var_ref = input_ref.to(self.device)
 
     def optimize_parameters(self, step, pretraining=False, discriminator=True):
+
+        self.batches += 1
+        update = False
+
         # G
         for p in self.netD.parameters():
             p.requires_grad = False
 
-        self.optimizer_G.zero_grad()
         self.fake_H = self.netG(self.var_L)
 
         l_g_total = 0
@@ -167,13 +170,17 @@ class SRGANModel(BaseModel):
                 l_g_total = l_g_gan + l_g_total
 
             l_g_total.backward()
-            self.optimizer_G.step()
+
+            if self.batches >= self.accumulate:
+                self.optimizer_G.step()
+                self.optimizer_G.zero_grad()
+                update = True
+
         # D
         if discriminator:
             for p in self.netD.parameters():
                 p.requires_grad = True
 
-            self.optimizer_D.zero_grad()
             l_d_total = 0
             pred_d_real = self.netD(self.var_ref)
             pred_d_fake = self.netD(self.fake_H.detach())  # detach to avoid BP to G
@@ -187,7 +194,13 @@ class SRGANModel(BaseModel):
                 l_d_total = (l_d_real + l_d_fake) / 2
 
             l_d_total.backward()
-            self.optimizer_D.step()
+            if update:
+                self.optimizer_D.step()
+                self.optimizer_D.zero_grad()
+
+        if update:
+            self.batches = 0
+
 
         # set log
         if step % self.D_update_ratio == 0 and step > self.D_init_iters:
