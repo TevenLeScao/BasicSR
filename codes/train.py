@@ -225,7 +225,7 @@ def get_resume_state(opt):
         device_id = torch.cuda.current_device()
         resume_state = torch.load(opt['path']['resume_state'],
                                   map_location=lambda storage, loc: storage.cuda(device_id))
-        option.check_resume(opt, resume_state['iter'])  # check resume options
+        option.check_resume(opt, resume_state['epoch'])  # check resume options
     else:
         resume_state = None
     return resume_state

@@ -114,7 +114,7 @@ def dict_to_nonedict(opt):
         return opt
 
 
-def check_resume(opt, resume_iter):
+def check_resume(opt, resume_epoch):
     '''Check resume states and pretrain_model paths'''
     logger = logging.getLogger('base')
     if opt['path']['resume_state']:
@@ -123,9 +123,9 @@ def check_resume(opt, resume_iter):
             logger.warning('pretrain_model path will be ignored when resuming training.')
 
         opt['path']['pretrain_model_G'] = osp.join(opt['path']['models'],
-                                                   '{}_G.pth'.format(resume_iter))
+                                                   '{}_G.pth'.format(resume_epoch))
         logger.info('Set [pretrain_model_G] to ' + opt['path']['pretrain_model_G'])
         if 'gan' in opt['model']:
             opt['path']['pretrain_model_D'] = osp.join(opt['path']['models'],
-                                                       '{}_D.pth'.format(resume_iter))
+                                                       '{}_D.pth'.format(resume_epoch))
             logger.info('Set [pretrain_model_D] to ' + opt['path']['pretrain_model_D'])
