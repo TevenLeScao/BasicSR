@@ -2,7 +2,7 @@
 # With 16 Residual blocks w/o BN
 
 #### general settings
-name: MSRResNet_3diff_PSNR
+name: MSRResNet_seq_2diff_PSNR
 use_tb_logger: true
 model: sr
 distortion: sr
@@ -46,15 +46,15 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 3
+  nb: 2
   upscale: 4
-  diff: standard
+  diff: sequential
 
 #### path
 path:
   pretrain_model_G: ~
   strict_load: true
-  resume_state: ../experiments/MSRResNet_3diff_PSNR/training_state/10.state
+  resume_state: ~
 
 #### training settings: learning rate scheme, loss
 train:
