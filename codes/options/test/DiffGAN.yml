@@ -1,4 +1,4 @@
-name: SRGAN_1diff_RRDB_time_4disc
+name: SRGAN_seq_2diff
 suffix: ~  # add suffix to saved images
 model: sr
 distortion: sr
@@ -26,12 +26,12 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 1
+  nb: 2
   upscale: 4
-  diff: standard
+  diff: sequential
   time_dependent: True
 
 #### path
 path:
 #  pretrain_model_G: ~
-  pretrain_model_G: ../experiments/SRGAN_1diff_RRDB_time_4disc/models/14_G.pth
+  pretrain_model_G: ../experiments/SRGAN_seq_2diff/models/10_G.pth

@@ -1,5 +1,5 @@
 #### general settings
-name: SRGAN_1diff_RRDB_time_4disc
+name: SRGAN_seq_2diff
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -43,8 +43,8 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 1
-  diff: standard
+  nb: 2
+  diff: sequential
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3
@@ -52,13 +52,13 @@ network_D:
 
 #### path
 path:
-  pretrain_model_G: null
+  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/MSRResNet_seq_2diff_PSNR/models/30_G.pth
   strict_load: true
   resume_state: null
 
 #### training settings: learning rate scheme, loss
 train:
-  G_pretraining: 5
+  G_pretraining: 0
   lr_G: !!float 1e-4
   weight_decay_G: 0
   beta1_G: 0.9
