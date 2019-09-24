@@ -200,7 +200,11 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             else:
                 patience += 1
                 if patience == opt['train']['epoch_patience']:
+                    print("no improvement, final patience, updating learning rate to {}".format(model.get_current_learning_rate()))
                     model.update_learning_rate(lr_decay)
+                    patience = 0
+                else:
+                    print("no improvement, patience {} out of {}".format(patience, opt['train']['epoch_patience']))
                 if model.get_current_learning_rate() < min_lr:
                     break
 
