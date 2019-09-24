@@ -68,12 +68,14 @@ train:
   beta1_D: 0.9
   beta2_D: 0.99
   lr_scheme: MultiStepLR
+  lr_decay: 0.2
+  min_lr: !!float 1e-6
 
   nepochs: 25
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5
-  epoch_patience: 10000
+  epoch_patience: 3
   accumulate: 2
 
   pixel_criterion: l1

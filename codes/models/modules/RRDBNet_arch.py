@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import models.modules.module_util as mutil
 from anode.anode.odeblock import make_odeblock
 from anode.models.sr_trunk import SRTrunk
-from torchdiffeq._impl.conv import ODEBlock, ODEfunc, StaticODEfunc, ConcatConv2d
+from torchdiffeq._impl.conv import ODEBlock, ODEfunc, ConcatConv2d
 
 
 class ResidualDenseBlock_5C(nn.Module):
@@ -109,10 +109,10 @@ class RRDBNet(nn.Module):
             self.conv_trunk = SRTrunk(nf, nb, make_odeblock(5, 'RK4'))
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential == "standard":
-            self.conv_trunk = ODEBlock(RRDBODEfunc(nf, nb=nb, normalization=False, time_dependent=time_dependent))
+            self.conv_trunk = ODEBlock(ODEfunc(nf, nb=nb, normalization=False, time_dependent=time_dependent))
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential == "sequential":
-            self.conv_trunk = nn.Sequential(*[ODEBlock(RRDBODEfunc(nf, nb=1, normalization=False, time_dependent=time_dependent)) for _ in range(nb)])
+            self.conv_trunk = nn.Sequential(*[ODEBlock(ODEfunc(nf, nb=1, normalization=False, time_dependent=time_dependent)) for _ in range(nb)])
             for block in self.conv_trunk:
                 mutil.initialize_weights(block.odefunc.convs)
         elif differential is None:

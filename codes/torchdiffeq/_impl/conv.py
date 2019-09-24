@@ -73,13 +73,17 @@ class ConcatConv2d(nn.Module):
 
 class ODEfunc(nn.Module):
 
-    def __init__(self, dim, nb, normalization=True):
+    def __init__(self, dim, nb, normalization=True, time_dependent=True):
         super(ODEfunc, self).__init__()
         self.normalization = normalization
         self.relu = nn.ReLU(inplace=False)
         self.nb = nb
+        self.time_dependent = time_dependent
         for _ in range(nb):
-            self.convs = nn.ModuleList([ConcatConv2d(dim, dim, 3, 1, 1) for _ in range(nb)])
+            if time_dependent:
+                self.convs = nn.ModuleList([ConcatConv2d(dim, dim, 3, 1, 1) for _ in range(nb)])
+            else:
+                self.convs = nn.ModuleList([nn.Conv2d(dim, dim, 3, 1, 1) for _ in range(nb)])
         if self.normalization:
             self.norms = nn.ModuleList([norm(dim) for _ in range(nb + 1)])
         self.nfe = 0
@@ -92,7 +96,10 @@ class ODEfunc(nn.Module):
         else:
             out = self.relu(x)
         for i in range(self.nb):
-            out = self.convs[i](t, out)
+            if self.time_dependent:
+                out = self.convs[i](t, out)
+            else:
+                out = self.convs[i](out)
             if self.normalization:
                 out = self.norms[i](out)
         return out

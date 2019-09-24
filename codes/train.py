@@ -90,6 +90,8 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
     best_niqe = 1e10
     best_psnr = 0
     patience = 0
+    lr_decay = opt['train']['lr_decay']
+    min_lr = opt['train']['min_lr']
     pretraining = False
     all_results = []
     for epoch in range(start_epoch, total_epochs):
@@ -105,8 +107,6 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         for batch_num, train_data in enumerate(train_loader):
             try:
                 current_step += 1
-                # update learning rate
-                model.update_learning_rate(current_step, warmup_iter=opt['train']['warmup_iter'])
 
                 # training
                 model.feed_data(train_data)
@@ -197,9 +197,11 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                 model.save(epoch)
                 model.save_training_state(epoch, current_step)
 
-            if avg_niqe > best_niqe and avg_psnr < best_psnr:
+            else:
                 patience += 1
                 if patience == opt['train']['epoch_patience']:
+                    model.update_learning_rate(lr_decay)
+                if model.get_current_learning_rate() < min_lr:
                     break
 
             if avg_niqe < best_niqe:

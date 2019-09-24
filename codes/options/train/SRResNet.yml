@@ -2,7 +2,7 @@
 # With 16 Residual blocks w/o BN
 
 #### general settings
-name: MSRResNet_seq_2diff_PSNR
+name: MSRResNet_BSD_1diff_standard
 use_tb_logger: true
 model: sr
 distortion: sr
@@ -13,14 +13,14 @@ niqe: false
 #### datasets
 datasets:
   train:
-    name: DIV2K
-    mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
-#    name: BSD
+#    name: DIV2K
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
+    name: BSD
+    mode: LQGT
+    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 
     use_shuffle: true
     n_workers: 6  # per GPU
@@ -30,14 +30,14 @@ datasets:
     use_rot: true
     color: RGB
   val:
-    name: DIV2K_val
-    mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
-#    name: BSD_val
+#    name: DIV2K_val
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+    name: BSD_val
+    mode: LQGT
+    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
     batch_size: 16
 
 #### network structures
@@ -46,9 +46,9 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 2
+  nb: 1
   upscale: 4
-  diff: sequential
+  diff: standard
 
 #### path
 path:
@@ -62,13 +62,15 @@ train:
   lr_scheme: CosineAnnealingLR_Restart
   beta1: 0.9
   beta2: 0.99
+  lr_decay: 0.2
+  min_lr: !!float 1e-6
   nepochs: 1000
   warmup_iter: -1  # no warm up
   T_period: [250000, 250000, 250000, 250000]
   restarts: [250000, 500000, 750000]
   restart_weights: [1, 1, 1]
   eta_min: !!float 1e-7
-  epoch_patience: 10000
+  epoch_patience: 3
   accumulate: 2
 
   pixel_criterion: l1

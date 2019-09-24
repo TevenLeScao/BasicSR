@@ -51,19 +51,24 @@ class BaseModel:
             init_lr_groups_l.append([v['initial_lr'] for v in optimizer.param_groups])
         return init_lr_groups_l
 
-    def update_learning_rate(self, cur_iter, warmup_iter=-1):
-        for scheduler in self.schedulers:
-            scheduler.step()
-        #### set up warm up learning rate
-        if cur_iter < warmup_iter:
-            # get initial lr for each group
-            init_lr_g_l = self._get_init_lr()
-            # modify warming-up learning rates
-            warm_up_lr_l = []
-            for init_lr_g in init_lr_g_l:
-                warm_up_lr_l.append([v / warmup_iter * cur_iter for v in init_lr_g])
-            # set learning rate
-            self._set_lr(warm_up_lr_l)
+    # def update_learning_rate(self, cur_iter, warmup_iter=-1):
+    #     for scheduler in self.schedulers:
+    #         scheduler.step()
+    #     #### set up warm up learning rate
+    #     if cur_iter < warmup_iter:
+    #         # get initial lr for each group
+    #         init_lr_g_l = self._get_init_lr()
+    #         # modify warming-up learning rates
+    #         warm_up_lr_l = []
+    #         for init_lr_g in init_lr_g_l:
+    #             warm_up_lr_l.append([v / warmup_iter * cur_iter for v in init_lr_g])
+    #         # set learning rate
+    #         self._set_lr(warm_up_lr_l)
+
+    def update_learning_rate(self, lr_decay):
+        for opt in self.optimizers:
+            for param_group in opt.param_groups:
+                param_group['lr'] *= lr_decay
 
     def get_current_learning_rate(self):
         # return self.schedulers[0].get_lr()[0]
