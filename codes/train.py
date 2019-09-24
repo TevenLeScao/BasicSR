@@ -192,7 +192,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             all_results.append((avg_psnr, avg_niqe))
 
             # save models and training states
-            if rank <= 0 and avg_psnr > best_psnr:
+            if rank <= 0 and (avg_psnr > best_psnr or opt['niqe']):
                 logger.info('Saving models and training states.')
                 model.save(epoch)
                 model.save_training_state(epoch, current_step)
