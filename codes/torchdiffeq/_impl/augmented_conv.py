@@ -124,31 +124,18 @@ class ConvODEFunc(nn.Module):
     non_linearity : string
         One of 'relu' and 'softplus'
     """
-    def __init__(self, img_size, num_filters, augment_dim=0,
+    def __init__(self, num_filters, num_blocks, augment_dim=0,
                  time_dependent=False, non_linearity='relu'):
         super(ConvODEFunc, self).__init__()
         self.augment_dim = augment_dim
-        self.img_size = img_size
         self.time_dependent = time_dependent
         self.nfe = 0  # Number of function evaluations
-        self.channels, self.height, self.width = img_size
-        self.channels += augment_dim
-        self.num_filters = num_filters
+        self.num_filters = num_filters + augment_dim
 
         if time_dependent:
-            self.conv1 = Conv2dTime(self.channels, self.num_filters,
-                                    kernel_size=1, stride=1, padding=0)
-            self.conv2 = Conv2dTime(self.num_filters, self.num_filters,
-                                    kernel_size=3, stride=1, padding=1)
-            self.conv3 = Conv2dTime(self.num_filters, self.channels,
-                                    kernel_size=1, stride=1, padding=0)
+            self.convs = [Conv2dTime(self.num_filters, self.num_filters,  kernel_size=3, stride=1, padding=1) for _ in range(num_blocks)]
         else:
-            self.conv1 = nn.Conv2d(self.channels, self.num_filters,
-                                   kernel_size=1, stride=1, padding=0)
-            self.conv2 = nn.Conv2d(self.num_filters, self.num_filters,
-                                   kernel_size=3, stride=1, padding=1)
-            self.conv3 = nn.Conv2d(self.num_filters, self.channels,
-                                   kernel_size=1, stride=1, padding=0)
+            self.convs = [nn.Conv2d(self.channels, self.num_filters, kernel_size=1, stride=1, padding=0) for _ in range(num_blocks)]
 
         if non_linearity == 'relu':
             self.activation = nn.ReLU(inplace=True)
@@ -166,76 +153,13 @@ class ConvODEFunc(nn.Module):
             Shape (batch_size, input_dim)
         """
         self.nfe += 1
+        out = x
         if self.time_dependent:
-            out = self.conv1(t, x)
-            out = self.activation(out)
-            out = self.conv2(t, out)
-            out = self.activation(out)
-            out = self.conv3(t, out)
+            for layer in self.convs:
+                out = layer(t, out)
+                out = self.activation(out)
         else:
-            out = self.conv1(x)
-            out = self.activation(out)
-            out = self.conv2(out)
-            out = self.activation(out)
-            out = self.conv3(out)
+            for layer in self.convs:
+                out = layer(out)
+                out = self.activation(out)
         return out
-
-
-class ConvODENet(nn.Module):
-    """Creates an ODEBlock with a convolutional ODEFunc followed by a Linear
-    layer.
-
-    Parameters
-    ----------
-    img_size : tuple of ints
-        Tuple of (channels, height, width).
-
-    num_filters : int
-        Number of convolutional filters.
-
-    output_dim : int
-        Dimension of output after hidden layer. Should be 1 for regression or
-        num_classes for classification.
-
-    augment_dim: int
-        Number of augmentation channels to add. If 0 does not augment ODE.
-
-    time_dependent : bool
-        If True adds time as input, making ODE time dependent.
-
-    non_linearity : string
-        One of 'relu' and 'softplus'
-
-    tol : float
-        Error tolerance.
-
-    adjoint : bool
-        If True calculates gradient with adjoint method, otherwise
-        backpropagates directly through operations of ODE solver.
-    """
-    def __init__(self, img_size, num_filters, output_dim=1,
-                 augment_dim=0, time_dependent=False, non_linearity='relu',
-                 tol=1e-3, adjoint=False):
-        super(ConvODENet, self).__init__()
-        self.img_size = img_size
-        self.num_filters = num_filters
-        self.augment_dim = augment_dim
-        self.output_dim = output_dim
-        self.flattened_dim = (img_size[0] + augment_dim) * img_size[1] * img_size[2]
-        self.time_dependent = time_dependent
-        self.tol = tol
-
-        odefunc = ConvODEFunc(img_size, num_filters, augment_dim,
-                              time_dependent, non_linearity)
-
-        self.odeblock = ODEBlock(odefunc, is_conv=True, tol=tol,
-                                 adjoint=adjoint)
-
-        self.linear_layer = nn.Linear(self.flattened_dim, self.output_dim)
-
-    def forward(self, x, return_features=False):
-        features = self.odeblock(x)
-        pred = self.linear_layer(features.view(features.size(0), -1))
-        if return_features:
-            return features, pred
-        return pred
