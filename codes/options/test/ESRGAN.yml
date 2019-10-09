@@ -13,11 +13,17 @@ datasets:
 #    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
 #    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
 #    batch_size: 1
-  test_2:  # the 2st test dataset
-    name: BSD_val
+#  test_2:  # the 2st test dataset
+#    name: BSD_val
+#    mode: LQGT
+#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    batch_size: 1
+  test_3:
+    name: urban100
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/LR/x4.lmdb
     batch_size: 1
 
 #### network structures

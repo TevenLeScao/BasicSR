@@ -67,7 +67,7 @@ class TimeResidualDenseBlock5C(nn.Module):
         x3 = self.lrelu(self.conv3(t, torch.cat((x, x1, x2), 1)))
         x4 = self.lrelu(self.conv4(t, torch.cat((x, x1, x2, x3), 1)))
         x5 = self.conv5(t, torch.cat((x, x1, x2, x3, x4), 1))
-        return x5 * 0.2 + x
+        return x5
 
 
 
@@ -97,7 +97,7 @@ class RRDBODEfunc(nn.Module):
                 out = self.convs[i](out)
             if self.normalization:
                 out = self.norms[i](out)
-        return out * 0.2 + x
+        return out
 
 
 class RRDBNet(nn.Module):
@@ -137,8 +137,8 @@ class RRDBNet(nn.Module):
         fea = self.lrelu(self.upconv2(F.interpolate(fea, scale_factor=2, mode='nearest')))
         out = self.conv_last(self.lrelu(self.HRconv(fea)))
 
-        # if interpolation_start:
-        #     interpolated = F.interpolate(x, scale_factor=4, mode='nearest')
-        #     out = out + interpolated
+        if interpolation_start:
+            interpolated = F.interpolate(x, scale_factor=4, mode='nearest')
+            out = out + interpolated
 
         return out

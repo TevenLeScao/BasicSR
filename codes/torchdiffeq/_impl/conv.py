@@ -159,7 +159,7 @@ class DenseODEfunc(nn.Module):
             out = self.lrelu(out)
         out = self.final_conv(out)
         out = self.lrelu(out)
-        return out * 0.2 + x
+        return out
 
 
 
@@ -196,3 +196,10 @@ class Flatten(nn.Module):
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+class ReactionDiffusion(nn.Module):
+
+    def __init__(self, in_channels, hidden_channels, data_term):
+        super(ReactionDiffusion, self).__init__()
+

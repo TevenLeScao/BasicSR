@@ -2,7 +2,7 @@
 # With 16 Residual blocks w/o BN
 
 #### general settings
-name: MSRResNet_BSD_1diff_standard
+name: MSRResNet_DIV_2diff_
 use_tb_logger: true
 model: sr
 distortion: sr
@@ -48,7 +48,7 @@ network_G:
   nf: 64
   nb: 1
   upscale: 4
-  diff: standard
+  diff: ~
 
 #### path
 path:
@@ -63,7 +63,7 @@ train:
   beta1: 0.9
   beta2: 0.99
   lr_decay: 0.2
-  min_lr: !!float 1e-6
+  min_lr: !!float 1e-5
   nepochs: 1000
   warmup_iter: -1  # no warm up
   T_period: [250000, 250000, 250000, 250000]

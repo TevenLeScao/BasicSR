@@ -77,7 +77,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
   lr_decay: 0.2
-  min_lr: !!float 1e-6
+  min_lr: !!float 1e-5
 
   nepochs: 25
   warmup_iter: -1  # no warm up
