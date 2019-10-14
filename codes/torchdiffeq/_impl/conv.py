@@ -5,6 +5,7 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
@@ -196,10 +197,3 @@ class Flatten(nn.Module):
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
-class ReactionDiffusion(nn.Module):
-
-    def __init__(self, in_channels, hidden_channels, data_term):
-        super(ReactionDiffusion, self).__init__()
-

@@ -133,12 +133,12 @@ class RRDBNet(nn.Module):
         fea = self.conv_first(x)
         trunk = self.trunk_conv(self.conv_trunk(fea))
         fea = fea + trunk
-        fea = self.lrelu(self.upconv1(F.interpolate(fea, scale_factor=2, mode='nearest')))
-        fea = self.lrelu(self.upconv2(F.interpolate(fea, scale_factor=2, mode='nearest')))
+        fea = self.lrelu(self.upconv1(F.interpolate(fea, scale_factor=2, mode='bicubic')))
+        fea = self.lrelu(self.upconv2(F.interpolate(fea, scale_factor=2, mode='bicubic')))
         out = self.conv_last(self.lrelu(self.HRconv(fea)))
 
         if interpolation_start:
-            interpolated = F.interpolate(x, scale_factor=4, mode='nearest')
+            interpolated = F.interpolate(x, scale_factor=4, mode='bicubic')
             out = out + interpolated
 
         return out

@@ -63,6 +63,6 @@ class MSRResNet(nn.Module):
             out = self.lrelu(self.pixel_shuffle(self.upconv1(out)))
 
         out = self.conv_last(self.lrelu(self.HRconv(out)))
-        base = F.interpolate(x, scale_factor=self.upscale, mode='bilinear', align_corners=False)
+        base = F.interpolate(x, scale_factor=self.upscale, mode='bicubic', align_corners=False)
         out = base + out
         return out
