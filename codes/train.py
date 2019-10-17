@@ -105,24 +105,25 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         if opt['dist']:
             train_sampler.set_epoch(epoch)
         for batch_num, train_data in enumerate(train_loader):
-            try:
+            # try:
                 current_step += 1
 
                 # training
                 model.feed_data(train_data)
                 model.optimize_parameters(current_step, pretraining=pretraining)
 
-                progress_bar(batch_num, len(train_loader), msg=None)
 
-                # if total_nfe is not None:
-                #     last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
-                #     total_nfe = model.netG.module.conv_trunk.nfe
-                #     print('NFE: {}'.format(last_nfe))
-                # else:
-                #     last_nfe = None
+                if total_nfe is not None:
+                    last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
+                    total_nfe = model.netG.module.conv_trunk.nfe
+                    progress_bar(batch_num, len(train_loader), msg=None)
+                    # progress_bar(batch_num, len(train_loader), msg='NFE: {}\n'.format(last_nfe))
+                else:
+                    progress_bar(batch_num, len(train_loader), msg=None)
+                    last_nfe = None
 
-            except RuntimeError:
-                continue
+            # except RuntimeError:
+            #     continue
 
             # log
         if epoch % opt['logger']['print_freq'] == 0:
@@ -144,7 +145,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             avg_niqe = 0.0
             idx = 0
             for batch_num, val_data in enumerate(val_loader):
-                try:
+                # try:
                     img_name = os.path.splitext(os.path.basename(val_data['LQ_path'][0]))[0]
                     img_dir = os.path.join(opt['path']['val_images'], img_name)
                     util.mkdir(img_dir)
@@ -177,8 +178,8 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
                     progress_bar(batch_num, len(val_loader), msg=None)
 
-                except RuntimeError:
-                    continue
+                # except RuntimeError as e:
+                #     continue
 
                 # if total_nfe is not None:
                 #     last_nfe = model.netG.module.conv_trunk.nfe - total_nfe

@@ -3,6 +3,7 @@ import logging
 import models.modules.SRResNet_arch as SRResNet_arch
 import models.modules.discriminator_vgg_arch as SRGAN_arch
 import models.modules.RRDBNet_arch as RRDBNet_arch
+import models.modules.reac_diff_arch as rd_net_arch
 
 logger = logging.getLogger('base')
 
@@ -23,6 +24,8 @@ def define_G(opt):
         netG = RRDBNet_arch.RRDBNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
                                     nf=opt_net['nf'], nb=opt_net['nb'], differential=opt_net['diff'],
                                     time_dependent=opt_net['time_dependent'])
+    elif which_model =='ReacDiff':
+        netG = rd_net_arch.ReacDiff(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'], nf=opt_net['nf'])
     # elif which_model == 'sft_arch':  # SFT-GAN
     #     netG = sft_arch.SFT_Net()
     else:

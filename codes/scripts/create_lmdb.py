@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 # configurations
-dataset_name = "urban100"
+dataset_name = "DIV2K"
 removed_fraction = 0
 
 def main(split):

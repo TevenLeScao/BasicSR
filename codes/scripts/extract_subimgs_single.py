@@ -11,12 +11,18 @@ try:
 except ImportError:
     pass
 
-dataset_name = 'urban100'
+dataset_name = 'DIV2K'
 
-crop_sz = 480
-step = 240
-thres_sz = 48
-compression_level = 3  # 3 is the default value in cv2
+if dataset_name == 'BSDS':
+    crop_sz = 240
+    step = 160
+    thres_sz = 48
+    compression_level = 3  # 3 is the default value in cv2
+else:
+    crop_sz = 480
+    step = 240
+    thres_sz = 48
+    compression_level = 3
 
 
 def main(split):
@@ -38,6 +44,7 @@ def main(split):
     for root, _, file_list in sorted(os.walk(input_folder)):
         path = [os.path.join(root, x) for x in file_list]  # assume only images in the input_folder
         img_list.extend(path)
+    print(img_list)
 
     def update(arg):
         pbar.update(arg)
