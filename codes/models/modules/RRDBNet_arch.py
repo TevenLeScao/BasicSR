@@ -6,17 +6,18 @@ import models.modules.module_util as mutil
 from anode.anode.odeblock import make_odeblock
 from anode.models.sr_trunk import SRTrunk
 from torchdiffeq._impl.conv import ODEBlock, ODEfunc, ConcatConv2d
+from torchdiffeq._impl.augmented_conv import ODEBlock as AugBlock, ConvODEFunc as AugFunc
 
 
 class ResidualDenseBlock_5C(nn.Module):
     def __init__(self, nf=64, gc=32, bias=True):
         super(ResidualDenseBlock_5C, self).__init__()
         # gc: growth channel, i.e. intermediate channels
-        self.conv1 = nn.Conv2d(nf, gc, 3, 1, 1, bias=bias)
-        self.conv2 = nn.Conv2d(nf + gc, gc, 3, 1, 1, bias=bias)
-        self.conv3 = nn.Conv2d(nf + 2 * gc, gc, 3, 1, 1, bias=bias)
-        self.conv4 = nn.Conv2d(nf + 3 * gc, gc, 3, 1, 1, bias=bias)
-        self.conv5 = nn.Conv2d(nf + 4 * gc, nf, 3, 1, 1, bias=bias)
+        self.conv1 = nn.Conv2d(nf, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv2 = nn.Conv2d(nf + gc, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv3 = nn.Conv2d(nf + 2 * gc, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv4 = nn.Conv2d(nf + 3 * gc, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv5 = nn.Conv2d(nf + 4 * gc, nf, 3, 1, 1, bias=bias, padding_mode="reflect")
         self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 
         # initialization
@@ -115,6 +116,9 @@ class RRDBNet(nn.Module):
             self.conv_trunk = nn.Sequential(*[ODEBlock(ODEfunc(nf, nb=1, normalization=False, time_dependent=time_dependent)) for _ in range(nb)])
             for block in self.conv_trunk:
                 mutil.initialize_weights(block.odefunc.convs)
+        elif differential == "augmented":
+            self.conv_trunk = AugBlock(AugFunc(nf=nf, nb=nb, augment_dim=nf//4, time_dependent=time_dependent), is_conv=True)
+            mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential is None:
             RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
             self.conv_trunk = mutil.make_layer(RRDB_block_f, nb)

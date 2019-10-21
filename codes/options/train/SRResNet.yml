@@ -2,7 +2,7 @@
 # With 16 Residual blocks w/o BN
 
 #### general settings
-name: MSRResNet_DIV_2diff_
+name: MSRResNet_BSD_time_2
 use_tb_logger: true
 model: sr
 distortion: sr
@@ -46,9 +46,10 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 1
+  nb: 2
   upscale: 4
-  diff: ~
+  diff: standard
+  time_dependent: true
 
 #### path
 path:

@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 # configurations
-dataset_name = "DIV2K"
+dataset_name = "urban100"
 removed_fraction = 0
 
 def main(split):
@@ -102,5 +102,9 @@ def main(split):
 
 
 if __name__ == '__main__':
-    for split in ["train", "valid"]:
-        main(split)
+    if dataset_name == 'urban100':
+        for split in ["test"]:
+            main(split)
+    else:
+        for split in ["train", "valid"]:
+            main(split)

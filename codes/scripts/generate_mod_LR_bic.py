@@ -3,7 +3,7 @@ import sys
 import cv2
 import numpy as np
 
-dataset_name = "DIV2K"
+dataset_name = "urban100"
 
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -80,5 +80,9 @@ def generate_mod_LR_bic(split):
 
 
 if __name__ == "__main__":
-    for split in ["train", "valid"]:
-        generate_mod_LR_bic(split)
+    if dataset_name == 'urban100':
+        for split in ["test"]:
+            generate_mod_LR_bic(split)
+    else:
+        for split in ["train", "valid"]:
+            generate_mod_LR_bic(split)

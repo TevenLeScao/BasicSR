@@ -1,4 +1,4 @@
-name: MSRResNet_DIV_1block
+name: MSRResNet_BSD_sequential_2
 suffix: ~  # add suffix to saved images
 model: sr
 distortion: sr
@@ -21,8 +21,8 @@ datasets:
   test_3:
     name: urban100
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/LR/x4.lmdb
     batch_size: 1
 
 #### network structures
@@ -31,12 +31,12 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 1
+  nb: 2
   upscale: 4
-  diff: ~
+  diff: sequential
 
 #### path
 path:
-  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/MSRResNet_BSD_1block/models/100_G.pth
+  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/MSRResNet_BSD_sequential_2/models/latest_G.pth
 #  pretrain_model_G: ../experiments/MSRResNet_23blocks/models/14_G.pth
 #  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth

@@ -25,7 +25,7 @@ datasets:
 
     use_shuffle: true
     n_workers: 6  # per GPU
-    batch_size: 1
+    batch_size: 16
     GT_size: 128
     use_flip: true
     use_rot: true
@@ -41,17 +41,18 @@ datasets:
     dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/LR/x4.lmdb
-    batch_size: 1
+#    dataroot_GT: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/LR/x4.lmdb
+    batch_size: 16
 
 #### network structures
 network_G:
   which_model_G: ReacDiff
+  differential: ~
   in_nc: 3
   out_nc: 3
   nf: 8
-  nb: 1
+  nb: 5
 
 #### path
 path:

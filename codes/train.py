@@ -4,6 +4,8 @@ import argparse
 import random
 import logging
 import json
+from time import time
+import matplotlib.pyplot as plt
 
 import torch
 import torch.distributed as dist
@@ -94,6 +96,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
     min_lr = opt['train']['min_lr']
     pretraining = False
     all_results = []
+    start_time = time()
     for epoch in range(start_epoch, total_epochs):
         if pretraining_epochs > 0:
             if epoch == 0:
@@ -190,7 +193,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx
-            all_results.append((avg_psnr, avg_niqe))
+            all_results.append((time()-start_time, avg_psnr, avg_niqe))
 
             # save models and training states
             if rank <= 0 and (avg_psnr > best_psnr or opt['niqe']):
@@ -231,6 +234,18 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         model.save('latest')
         logger.info('End of training.')
         json.dump(all_results, open(os.path.join(opt['path']['log'], 'validation_results.json'), 'w'), indent=2)
+
+        fig, ax = plt.subplots()
+        y = list(zip(*all_results))
+        runtime, dev_psnr, dev_niqe = y[0], y[1], y[2]
+        ax.plot(runtime, dev_psnr, color='blue', label='Validation PSNR')
+
+        ax.set(xlabel='Time (s)', ylabel='Dev. PSNR.')
+        ax.legend(loc='upper right')
+        ax.grid()
+
+        plt.savefig(os.path.join(opt['path']['log'], "psnr_evolution.png"))
+        plt.show()
 
 
 def get_resume_state(opt):

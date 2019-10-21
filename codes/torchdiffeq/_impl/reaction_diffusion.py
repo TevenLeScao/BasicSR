@@ -3,11 +3,12 @@ from torch import nn
 import torch.nn.functional as F
 import math
 from utils.downsampling import cross_scale_4_loss_gradient
+from multipledispatch import dispatch
 
 
 class ReactionDiffusion(nn.Module):
 
-    def __init__(self, space_channels, hidden_channels, kernel_size=3, stride=1, base_size=8, normalization=10, scale_factor=4, rbf=True):
+    def __init__(self, space_channels, hidden_channels, kernel_size=3, stride=1, base_size=8, normalization=10, scale_factor=4, rbf=True, residual=False):
         super(ReactionDiffusion, self).__init__()
 
         self.kernel_size = kernel_size
@@ -26,10 +27,12 @@ class ReactionDiffusion(nn.Module):
         self.lr_input = None
         self.scale_factor = scale_factor
         self.nfe = 0
+        self.residual = residual
 
     def set_lr_input(self, x):
         self.lr_input = x
 
+    @dispatch(object, object)
     def forward(self, t, x):
 
         self.nfe += 1
@@ -37,20 +40,46 @@ class ReactionDiffusion(nn.Module):
         diffusion_term = F.conv2d(F.pad(x, [2, 2, 2, 2], mode='reflect'),
                                   self.filters, bias=None, stride=self.stride, padding=0)
         if self.rbf:
-            diffusion_term = rbf(diffusion_term, self.base_weights, self.base_centers, self.std)
+            diffusion_term = apply_rbf(diffusion_term, self.base_weights, self.base_centers, self.std)
         else:
             diffusion_term = self.activation(diffusion_term)
-        diffusion_term = F.conv2d(diffusion_term, self.filters.transpose(0, 1), bias=None, stride=self.stride, padding=0)
+        diffusion_term = F.conv2d(diffusion_term, torch.flip(self.filters.transpose(0, 1), dims=[2, 3]), bias=None, stride=self.stride, padding=0)
 
         if self.lr_input is not None:
             reaction_term = cross_scale_4_loss_gradient(x, self.lr_input)
-            # diffusion_term = diffusion_term + torch.exp(self.data_weight_exponent) * reaction_term
-            diffusion_term = diffusion_term + reaction_term
+            diffusion_term = diffusion_term + torch.exp(self.data_weight_exponent) * reaction_term
+            # diffusion_term = diffusion_term + reaction_term
+
+        if self.residual:
+            diffusion_term = diffusion_term + x
+
+        return diffusion_term
+
+    @dispatch(object)
+    def forward(self, x):
+
+        self.nfe += 1
+
+        diffusion_term = F.conv2d(F.pad(x, [2, 2, 2, 2], mode='reflect'),
+                                  self.filters, bias=None, stride=self.stride, padding=0)
+        if self.rbf:
+            diffusion_term = apply_rbf(diffusion_term, self.base_weights, self.base_centers, self.std)
+        else:
+            diffusion_term = self.activation(diffusion_term)
+        diffusion_term = F.conv2d(diffusion_term, torch.flip(self.filters.transpose(0, 1), dims=[2, 3]), bias=None, stride=self.stride, padding=0)
+
+        if self.lr_input is not None:
+            reaction_term = cross_scale_4_loss_gradient(x, self.lr_input)
+            diffusion_term = diffusion_term + torch.exp(self.data_weight_exponent) * reaction_term
+            # diffusion_term = diffusion_term + reaction_term
+
+        if self.residual:
+            diffusion_term = diffusion_term + x
 
         return diffusion_term
 
 
-def rbf(inp, base_weights, base_centers, std):
+def apply_rbf(inp, base_weights, base_centers, std):
     # B = batch size, H = height, W = width, K = kernel number, R = radial basis size
     base_size = base_weights.shape[1]
     inp = inp.unsqueeze(dim=len(inp.shape)).expand(*inp.shape, base_size)           # add end dim and expand tensor to (B, H, W, K, R)

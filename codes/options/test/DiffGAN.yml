@@ -21,8 +21,8 @@ datasets:
   test_3:
     name: urban100
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/LR/x4.lmdb
     batch_size: 1
 
 

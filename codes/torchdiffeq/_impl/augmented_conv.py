@@ -112,7 +112,7 @@ class ConvODEFunc(nn.Module):
     img_size : tuple of ints
         Tuple of (channels, height, width).
 
-    num_filters : int
+    nf : int
         Number of convolutional filters.
 
     augment_dim: int
@@ -124,18 +124,18 @@ class ConvODEFunc(nn.Module):
     non_linearity : string
         One of 'relu' and 'softplus'
     """
-    def __init__(self, num_filters, num_blocks, augment_dim=0,
+    def __init__(self, nf, nb, augment_dim=0,
                  time_dependent=False, non_linearity='relu'):
         super(ConvODEFunc, self).__init__()
         self.augment_dim = augment_dim
         self.time_dependent = time_dependent
         self.nfe = 0  # Number of function evaluations
-        self.num_filters = num_filters + augment_dim
+        self.num_filters = nf + augment_dim
 
         if time_dependent:
-            self.convs = [Conv2dTime(self.num_filters, self.num_filters,  kernel_size=3, stride=1, padding=1) for _ in range(num_blocks)]
+            self.convs = nn.ModuleList([Conv2dTime(self.num_filters, self.num_filters,  kernel_size=3, stride=1, padding=1) for _ in range(nb)])
         else:
-            self.convs = [nn.Conv2d(self.channels, self.num_filters, kernel_size=1, stride=1, padding=0) for _ in range(num_blocks)]
+            self.convs = nn.ModuleList([nn.Conv2d(self.num_filters, self.num_filters, kernel_size=1, stride=1, padding=0) for _ in range(nb)])
 
         if non_linearity == 'relu':
             self.activation = nn.ReLU(inplace=True)
