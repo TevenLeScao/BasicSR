@@ -100,7 +100,6 @@ class RRDBODEfunc(nn.Module):
 class RRDBNet(nn.Module):
     def __init__(self, in_nc, out_nc, nf, nb, gc=32, differential=None, time_dependent=False, adjoint=False, sb=5):
         super(RRDBNet, self).__init__()
-
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
         self.trunk_conv = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
         if differential == "checkpointed":
@@ -118,7 +117,7 @@ class RRDBNet(nn.Module):
             self.conv_trunk = AugBlock(AugFunc(nf=nf, nb=nb, augment_dim=augment_dim, time_dependent=time_dependent), adjoint=adjoint, is_conv=True)
             self.trunk_conv = nn.Conv2d(nf+augment_dim, nf, 3, 1, 1, bias=True)
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
-        elif differential is None:
+        elif differential is None or differential == "nodiff":
             RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc, sb=sb)
             self.conv_trunk = mutil.make_layer(RRDB_block_f, nb)
         else:

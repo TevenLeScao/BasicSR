@@ -326,6 +326,10 @@ def train_harness(opt, rank, main_loop=train_main):
     logger.handlers.clear()
 
 
+def naming_convention(dataset_name, diff, time_dependent, adjoint, nb):
+    return "_{}_{}{}{}_{}".format(dataset_name, diff, "_time" if time_dependent else "", "_adjoint" if adjoint else "", nb)
+
+
 if __name__ == '__main__':
 
     # options
@@ -334,19 +338,40 @@ if __name__ == '__main__':
     parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
                         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('-dl', '--diff-list', nargs='+', default=[])
+    parser.add_argument('-td', '--time-dep-list', nargs='+', default=[])
+    parser.add_argument('-ad', '--adjoint-list', nargs='+', default=[])
     args = parser.parse_args()
     raw_opt = option.load_yaml(args.opt)
-    parsed_opt = option.parse_raw(raw_opt, is_train=True)
 
-    # distributed training settings
-    if args.launcher == 'none':  # disabled distributed training
-        parsed_opt['dist'] = False
-        rank = -1
-        print('Disabled distributed training.')
-    else:
-        parsed_opt['dist'] = True
-        init_dist()
-        world_size = torch.distributed.get_world_size()
-        rank = torch.distributed.get_rank()
+    diff_list = args.diff_list if len(args.diff_list) > 0 else [raw_opt['network_G']['diff']]
+    time_dep_list = [eval(value) for value in args.time_dep_list] if len(args.time_dep_list) > 0 \
+        else [raw_opt['network_G']['time_dependent']]
+    adjoint_list = [eval(value) for value in args.adjoint_list] if len(args.adjoint_list) > 0\
+        else [raw_opt['network_G']['adjoint']]
+    original_name = raw_opt['name']
 
-    train_harness(parsed_opt, rank)
+    for diff in diff_list:
+        for time_dependent in time_dep_list:
+            for adjoint in adjoint_list:
+                dataset_name = raw_opt['datasets']['train']['name']
+                nb = raw_opt['network_G']['nb']
+                raw_opt['network_G']['diff'] = diff
+                raw_opt['network_G']['time_dependent'] = time_dependent
+                raw_opt['network_G']['adjoint'] = adjoint
+                raw_opt['name'] = original_name + \
+                                  naming_convention(dataset_name, diff, time_dependent, adjoint, nb)
+                parsed_opt = option.parse_raw(raw_opt, is_train=True)
+
+                # distributed training settings
+                if args.launcher == 'none':  # disabled distributed training
+                    parsed_opt['dist'] = False
+                    rank = -1
+                    print('Disabled distributed training.')
+                else:
+                    parsed_opt['dist'] = True
+                    init_dist()
+                    world_size = torch.distributed.get_world_size()
+                    rank = torch.distributed.get_rank()
+
+                train_harness(parsed_opt, rank)

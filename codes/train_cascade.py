@@ -125,7 +125,6 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=0)
     args = parser.parse_args()
     raw_opt = option.load_yaml(args.opt)
-    raw_opt['train']['G_pretraining'] = raw_opt['train']['nepochs']
     original_name = raw_opt['name']
 
     for cascade_depth in [2, 3, 4, 5]:

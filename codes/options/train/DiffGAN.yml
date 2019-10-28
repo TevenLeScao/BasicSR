@@ -46,7 +46,7 @@ network_G:
   nb: 7
   diff: augmented
   time_dependent: true
-  adjoint: false
+  adjoint: true
   sb: 1
 network_D:
   which_model_D: discriminator_vgg_128
