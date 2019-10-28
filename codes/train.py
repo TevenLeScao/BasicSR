@@ -240,6 +240,8 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         logger.info('End of training.')
         json.dump(all_results, open(os.path.join(opt['path']['log'], 'validation_results.json'), 'w'), indent=2)
 
+        logger_val.handlers.clear()
+
         fig, ax = plt.subplots()
         y = list(zip(*all_results))
         runtime, dev_psnr, dev_niqe = y[0], y[1], y[2]
@@ -375,3 +377,5 @@ if __name__ == '__main__':
                     rank = torch.distributed.get_rank()
 
                 train_harness(parsed_opt, rank)
+
+

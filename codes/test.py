@@ -1,4 +1,5 @@
 import os.path as osp
+from os import listdir
 import logging
 import argparse
 from collections import OrderedDict
@@ -8,6 +9,7 @@ import utils.util as util
 from data.util import bgr2ycbcr
 from data import create_dataset, create_dataloader
 from models import create_model
+from train import naming_convention
 
 
 def setup_logging(opt):
@@ -26,8 +28,9 @@ def create_loaders(opt, logger):
     # Create test dataset and dataloader
     test_loaders = []
     for phase, dataset_opt in sorted(opt['datasets'].items()):
+        print(phase)
         test_set = create_dataset(dataset_opt)
-        test_loader = create_dataloader(test_set, dataset_opt)
+        test_loader = create_dataloader(test_set, dataset_opt, opt)
         logger.info('Number of test images in [{:s}]: {:d}'.format(dataset_opt['name'], len(test_set)))
         test_loaders.append(test_loader)
     return test_loaders
@@ -139,13 +142,42 @@ def test_harness(opt, export_images=False):
     logger.handlers.clear()
 
 
+def get_latest_numeric_model(directory):
+    name_list = [model_name.split("_")[0] for model_name in listdir(directory)]
+    return str(max([int(model_name) for model_name in name_list if model_name.isdigit()])) + "_G.pth"
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-opt', type=str, required=True, help='Path to options YAML file.')
     parser.add_argument('-export_images', help='Whether to save output images', action='store_true')
-    raw_opt = option.load_yaml(parser.parse_args().opt)
-    parsed_opt = option.parse_raw(raw_opt, is_train=False)
-    parsed_opt = option.dict_to_nonedict(parsed_opt)
+    parser.add_argument('-dl', '--diff-list', nargs='+', default=[])
+    parser.add_argument('-td', '--time-dep-list', nargs='+', default=[])
+    parser.add_argument('-ad', '--adjoint-list', nargs='+', default=[])
+    args = parser.parse_args()
+    raw_opt = option.load_yaml(args.opt)
+
+    diff_list = args.diff_list if len(args.diff_list) > 0 else [raw_opt['network_G']['diff']]
+    time_dep_list = [eval(value) for value in args.time_dep_list] if len(args.time_dep_list) > 0 \
+        else [raw_opt['network_G']['time_dependent']]
+    adjoint_list = [eval(value) for value in args.adjoint_list] if len(args.adjoint_list) > 0\
+        else [raw_opt['network_G']['adjoint']]
+    original_name = raw_opt['name']
     export_images = parser.parse_args().export_images
 
-    test_harness(parsed_opt, export_images=export_images)
+    for diff in diff_list:
+        for time_dependent in time_dep_list:
+            for adjoint in adjoint_list:
+                dataset_name = raw_opt['network_G']['training_set']
+                nb = raw_opt['network_G']['nb']
+                raw_opt['network_G']['diff'] = diff
+                raw_opt['network_G']['time_dependent'] = time_dependent
+                raw_opt['network_G']['adjoint'] = adjoint
+                raw_opt['name'] = original_name + \
+                                  naming_convention(dataset_name, diff, time_dependent, adjoint, nb)
+                if raw_opt['path']['pretrain_model_G'] is None:
+                    directory = "../experiments/{}/models/".format(raw_opt['name'])
+                    raw_opt['path']['pretrain_model_G'] = osp.join(directory, get_latest_numeric_model(directory))
+                parsed_opt = option.dict_to_nonedict(option.parse_raw(raw_opt, is_train=False))
+
+                test_harness(parsed_opt, export_images=export_images)

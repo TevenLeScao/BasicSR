@@ -1,4 +1,4 @@
-name: MSRResNet_DIV_augmented_time_7
+name: MSRResNet
 suffix: ~  # add suffix to saved images
 model: sr
 distortion: sr
@@ -31,15 +31,16 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 7
+  nb: 2
   upscale: 4
   diff: augmented
   time_dependent: true
   adjoint: false
   sb: 1
+  training_set: BSD
 
 #### path
 path:
-  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/MSRResNet_DIV_augmented_time_7/models/latest_G.pth
+  pretrain_model_G: ~
 #  pretrain_model_G: ../experiments/MSRResNet_23blocks/models/14_G.pth
 #  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth

@@ -37,6 +37,8 @@ network_G:
   diff: augmented
   time_dependent: true
   adjoint: false
+  sb: 1
+  training_set: DIV
 
 #### path
 path:
