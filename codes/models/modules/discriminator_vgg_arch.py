@@ -25,13 +25,14 @@ class Discriminator_VGG_128(nn.Module):
         self.bn3_0 = nn.BatchNorm2d(nf * 8, affine=True)
         self.conv3_1 = nn.Conv2d(nf * 8, nf * 8, 4, 2, 1, bias=False)
         self.bn3_1 = nn.BatchNorm2d(nf * 8, affine=True)
-        # [512, 8, 8]
-        self.conv4_0 = nn.Conv2d(nf * 8, nf * 8, 3, 1, 1, bias=False)
-        self.bn4_0 = nn.BatchNorm2d(nf * 8, affine=True)
-        self.conv4_1 = nn.Conv2d(nf * 8, nf * 8, 4, 2, 1, bias=False)
-        self.bn4_1 = nn.BatchNorm2d(nf * 8, affine=True)
+        # # [512, 8, 8]
+        # self.conv4_0 = nn.Conv2d(nf * 8, nf * 8, 3, 1, 1, bias=False)
+        # self.bn4_0 = nn.BatchNorm2d(nf * 8, affine=True)
+        # self.conv4_1 = nn.Conv2d(nf * 8, nf * 8, 4, 2, 1, bias=False)
+        # self.bn4_1 = nn.BatchNorm2d(nf * 8, affine=True)
 
-        self.linear1 = nn.Linear(nf * 8 * 4 * 4, 100)
+        # self.linear1 = nn.Linear(nf * 8 * 4 * 4, 100)
+        self.linear1 = nn.Linear(nf * 8 * 8 * 8, 100)
         self.linear2 = nn.Linear(100, 1)
 
         # activation function
@@ -50,8 +51,8 @@ class Discriminator_VGG_128(nn.Module):
         fea = self.lrelu(self.bn3_0(self.conv3_0(fea)))
         fea = self.lrelu(self.bn3_1(self.conv3_1(fea)))
 
-        fea = self.lrelu(self.bn4_0(self.conv4_0(fea)))
-        fea = self.lrelu(self.bn4_1(self.conv4_1(fea)))
+        # fea = self.lrelu(self.bn4_0(self.conv4_0(fea)))
+        # fea = self.lrelu(self.bn4_1(self.conv4_1(fea)))
 
         fea = fea.view(fea.size(0), -1)
         fea = self.lrelu(self.linear1(fea))

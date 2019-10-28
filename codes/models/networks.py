@@ -23,7 +23,8 @@ def define_G(opt):
     elif which_model == 'RRDBNet':
         netG = RRDBNet_arch.RRDBNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
                                     nf=opt_net['nf'], nb=opt_net['nb'], differential=opt_net['diff'],
-                                    time_dependent=opt_net['time_dependent'])
+                                    time_dependent=opt_net['time_dependent'], adjoint=opt_net['adjoint'],
+                                    sb=opt_net['sb'])
     elif which_model == 'ReacDiff':
         netG = rd_net_arch.ReacDiff(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'], nf=opt_net['nf'],
                                     nb=opt_net['nb'], differential=opt_net['diff'])

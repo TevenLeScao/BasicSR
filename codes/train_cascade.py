@@ -40,12 +40,10 @@ def psnr_main(opt, train_loader, val_loader, train_sampler, logger, resume_state
             train_sampler.set_epoch(epoch)
         for batch_num, train_data in enumerate(train_loader):
             current_step += 1
-            # update learning rate
-            model.update_learning_rate(current_step, warmup_iter=opt['train']['warmup_iter'])
 
             # training
             model.feed_data(train_data)
-            model.optimize_parameters(current_step, pretraining=True, discriminator=False)
+            model.optimize_parameters(current_step)
 
             progress_bar(batch_num, len(train_loader), msg=None)
 
@@ -89,6 +87,12 @@ def psnr_main(opt, train_loader, val_loader, train_sampler, logger, resume_state
             if avg_psnr < best_psnr:
                 patience += 1
                 if patience == opt['train']['epoch_patience']:
+                    model.update_learning_rate(opt['train']['lr_decay'])
+                    print("no improvement, final patience, updating learning rate to {}".format(model.get_current_learning_rate()))
+                    patience = 0
+                else:
+                    print("no improvement, patience {} out of {}".format(patience, opt['train']['epoch_patience']))
+                if model.get_current_learning_rate() < opt['train']['min_lr']:
                     break
 
             else:
@@ -124,9 +128,10 @@ if __name__ == '__main__':
     raw_opt['train']['G_pretraining'] = raw_opt['train']['nepochs']
     original_name = raw_opt['name']
 
-    for cascade_width in [2, 4, 8, 16, 32, 64]:
-        raw_opt['network_G']['nf'] = cascade_width
-        raw_opt['name'] = original_name + '_cascade_{}'.format(cascade_width)
+    for cascade_depth in [2, 3, 4, 5]:
+        raw_opt['network_G']['nb'] = cascade_depth
+        raw_opt['network_G']['sb'] = cascade_depth
+        raw_opt['name'] = original_name + '_cascade_{}'.format(cascade_depth)
         parsed_opt = option.parse_raw(raw_opt, is_train=True)
 
         # distributed training settings

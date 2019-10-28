@@ -47,7 +47,7 @@ def cascade_test_main(opt, logger, model, test_loader):
 
             psnr = util.calculate_psnr(cropped_sr_img * 255, cropped_gt_img * 255)
             ssim = util.calculate_ssim(cropped_sr_img * 255, cropped_gt_img * 255)
-            niqe = util.calculate_niqe(cropped_sr_img * 255)
+            # niqe = util.calculate_niqe(cropped_sr_img * 255)
 
             if total_nfe is not None:
                 last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
@@ -66,13 +66,13 @@ def cascade_test_main(opt, logger, model, test_loader):
                     cropped_gt_img_y = gt_img_y[crop_border:-crop_border, crop_border:-crop_border]
                 psnr_y = util.calculate_psnr(cropped_sr_img_y * 255, cropped_gt_img_y * 255)
                 ssim_y = util.calculate_ssim(cropped_sr_img_y * 255, cropped_gt_img_y * 255)
-                results.append((psnr, ssim, niqe, psnr_y, ssim_y))
+                results.append((psnr, ssim, psnr_y, ssim_y))
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}; NFE: {}'.
-                        format(img_name, psnr, ssim, niqe, psnr_y, ssim_y, last_nfe))
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}; NFE: {}'.
+                        format(img_name, psnr, ssim, psnr_y, ssim_y, last_nfe))
             else:
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}; NFE: {}'.format(img_name, psnr, ssim, niqe, last_nfe))
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NFE: {}'.format(img_name, psnr, ssim, last_nfe))
         else:
             logger.info(img_name)
 

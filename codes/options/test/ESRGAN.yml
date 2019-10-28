@@ -1,4 +1,4 @@
-name: SRGAN_5blocks_4disc
+name: ESRGAN_DIV_none_20
 suffix: ~  # add suffix to saved images
 model: sr
 distortion: sr
@@ -32,10 +32,9 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 5
+  nb: 20
   upscale: 4
 
 #### path
 path:
-#  pretrain_model_G: ~
-#  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth
+  pretrain_model_G: ../experiments/ESRGAN_DIV_none_20/models/5_G.pth

@@ -17,7 +17,7 @@ class ODEBlock(nn.Module):
         If True calculates gradient with adjoint method, otherwise
         backpropagates directly through operations of ODE solver.
     """
-    def __init__(self, odefunc, is_conv=False, tol=1e-3, adjoint=False, max_num_steps=1000):
+    def __init__(self, odefunc, is_conv=False, tol=1e-3, adjoint=False, max_num_steps=5000):
         super(ODEBlock, self).__init__()
         self.adjoint = adjoint
         self.is_conv = is_conv
@@ -135,7 +135,7 @@ class ConvODEFunc(nn.Module):
         if time_dependent:
             self.convs = nn.ModuleList([Conv2dTime(self.num_filters, self.num_filters,  kernel_size=3, stride=1, padding=1) for _ in range(nb)])
         else:
-            self.convs = nn.ModuleList([nn.Conv2d(self.num_filters, self.num_filters, kernel_size=1, stride=1, padding=0) for _ in range(nb)])
+            self.convs = nn.ModuleList([nn.Conv2d(self.num_filters, self.num_filters, kernel_size=3, stride=1, padding=1) for _ in range(nb)])
 
         if non_linearity == 'relu':
             self.activation = nn.ReLU(inplace=True)

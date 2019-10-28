@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
-# from torchdiffeq import odeint_adjoint as odeint
+from torchdiffeq import odeint_adjoint as odeint_adjoint
 from torchdiffeq import odeint
 
 
@@ -103,32 +103,7 @@ class ODEfunc(nn.Module):
                 out = self.convs[i](out)
             if self.normalization:
                 out = self.norms[i](out)
-        return out
-
-
-class StaticODEfunc(nn.Module):
-
-    def __init__(self, dim, nb, normalization=True):
-        super(StaticODEfunc, self).__init__()
-        self.normalization = normalization
-        self.relu = nn.ReLU(inplace=False)
-        self.nb = nb
-        self.convs = nn.ModuleList([nn.Conv2d(dim, dim, 3, 1, 1) for _ in range(nb)])
-        if self.normalization:
-            self.norms = nn.ModuleList([norm(dim) for _ in range(nb + 1)])
-        self.nfe = 0
-
-    def forward(self, t, x):
-        self.nfe += 1
-        if self.normalization:
-            out = self.norms[-1](x)
             out = self.relu(out)
-        else:
-            out = self.relu(x)
-        for i in range(self.nb):
-            out = self.convs[i](out)
-            if self.normalization:
-                out = self.norms[i](out)
         return out
 
 
@@ -166,14 +141,18 @@ class DenseODEfunc(nn.Module):
 
 class ODEBlock(nn.Module):
 
-    def __init__(self, odefunc):
+    def __init__(self, odefunc, adjoint=False):
         super(ODEBlock, self).__init__()
         self.odefunc = odefunc
+        self.adjoint = adjoint
         self.integration_time = torch.tensor([0, 1]).float()
 
     def forward(self, x):
         self.integration_time = self.integration_time.type_as(x)
-        out = odeint(self.odefunc, x, self.integration_time, rtol=1e-4, atol=1e-4)
+        if self.adjoint:
+            out = odeint_adjoint(self.odefunc, x, self.integration_time, rtol=1e-4, atol=1e-4)
+        else:
+            out = odeint(self.odefunc, x, self.integration_time, rtol=1e-4, atol=1e-4)
         return out[1]
 
     @property

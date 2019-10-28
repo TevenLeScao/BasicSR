@@ -1,5 +1,5 @@
 #### general settings
-name: SRGAN_seq_2diff
+name: GAN_DIV_augmented_time_7
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -43,8 +43,11 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 2
-  diff: sequential
+  nb: 7
+  diff: augmented
+  time_dependent: true
+  adjoint: false
+  sb: 1
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3
@@ -52,9 +55,10 @@ network_D:
 
 #### path
 path:
-  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/MSRResNet_seq_2diff_PSNR/models/30_G.pth
+  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/GAN_DIV_augmented_time_7/models/5_G.pth
+  pretrain_model_D: /home/teven/canvas/python/BasicSR/experiments/GAN_DIV_augmented_time_7/models/5_D.pth
   strict_load: true
-  resume_state: null
+  resume_state: /home/teven/canvas/python/BasicSR/experiments/GAN_DIV_augmented_time_7/training_state/5.state
 
 #### training settings: learning rate scheme, loss
 train:
@@ -69,7 +73,7 @@ train:
   beta2_D: 0.99
   lr_scheme: MultiStepLR
   lr_decay: 0.2
-  min_lr: !!float 1e-5
+  min_lr: !!float 5e-5
 
   nepochs: 25
   warmup_iter: -1  # no warm up

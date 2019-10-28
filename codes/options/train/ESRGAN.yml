@@ -1,5 +1,5 @@
 #### general settings
-name: pretrained_test
+name: ESRGAN_DIV_none_20
 use_tb_logger: true
 model: srgan
 distortion: sr
@@ -51,7 +51,7 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 23
+  nb: 20
 network_D:
   which_model_D: discriminator_vgg_128
   in_nc: 3
@@ -59,10 +59,11 @@ network_D:
 
 #### path
 path:
-  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth
+  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/ESRGAN_DIV_none_20/models/1_G.pth
+  pretrain_model_D: /home/teven/canvas/python/BasicSR/experiments/ESRGAN_DIV_none_20/models/1_D.pth
 #  pretrain_model_G: null
   strict_load: true
-  resume_state: null
+  resume_state: /home/teven/canvas/python/BasicSR/experiments/ESRGAN_DIV_none_20/training_state/1.state
 
 #### training settings: learning rate scheme, loss
 train:
@@ -79,7 +80,7 @@ train:
   lr_decay: 0.2
   min_lr: !!float 1e-5
 
-  nepochs: 25
+  nepochs: 1000
   warmup_iter: -1  # no warm up
   lr_steps: [50000, 100000, 200000, 300000]
   lr_gamma: 0.5

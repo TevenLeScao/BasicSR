@@ -104,9 +104,10 @@ class BaseModel:
                 load_net_clean[k] = v
         network.load_state_dict(load_net_clean, strict=strict)
 
-    def save_training_state(self, epoch, iter_step):
+    def save_training_state(self, epoch, iter_step, best_psnr=0, best_niqe=1e10, patience=0):
         '''Saves training state during training, which will be used for resuming'''
-        state = {'epoch': epoch, 'iter': iter_step, 'schedulers': [], 'optimizers': []}
+        state = {'epoch': epoch, 'iter': iter_step, 'schedulers': [], 'optimizers': [],
+                 'psnr': best_psnr, 'niqe': best_niqe, 'patience': patience}
         for s in self.schedulers:
             state['schedulers'].append(s.state_dict())
         for o in self.optimizers:

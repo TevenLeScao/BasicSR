@@ -68,13 +68,21 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
     except AttributeError:
         total_nfe = None
 
+    best_niqe = 1e10
+    best_psnr = 0
+    patience = 0
+
     # resume training
     if resume_state:
-        logger.info('Resuming training from epoch: {}, iter: {}.'.format(
-            resume_state['epoch'], resume_state['iter']))
+        logger.info('Resuming training from epoch: {}, iter: {}., psnr: {}, niqe: {}, patience: {}'.format(
+            resume_state['epoch'], resume_state['iter'], resume_state['psnr'], resume_state['niqe'],
+            resume_state['patience']))
 
-        start_epoch = resume_state['epoch']
+        start_epoch = resume_state['epoch'] + 1
         current_step = resume_state['iter']
+        best_psnr = resume_state.get('psnr', 0)
+        best_niqe = resume_state.get('niqe', 1e10)
+        patience = resume_state.get('patience', 0)
         model.resume_training(resume_state)  # handle optimizers and schedulers
     else:
         current_step = 0
@@ -89,9 +97,6 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         pretraining_epochs = 0
     logger.info('Start training from epoch: {:d}, iter: {:d}'.format(start_epoch, current_step))
     total_epochs = int(opt['train']['nepochs'])
-    best_niqe = 1e10
-    best_psnr = 0
-    patience = 0
     lr_decay = opt['train']['lr_decay']
     min_lr = opt['train']['min_lr']
     pretraining = False
@@ -196,16 +201,16 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             all_results.append((time()-start_time, avg_psnr, avg_niqe))
 
             # save models and training states
-            if rank <= 0 and (avg_psnr > best_psnr or opt['niqe']):
+            if rank <= 0 and (avg_psnr > best_psnr or avg_niqe < best_niqe - 10e-6):
                 logger.info('Saving models and training states.')
                 model.save(epoch)
-                model.save_training_state(epoch, current_step)
+                model.save_training_state(epoch, current_step, best_psnr, best_niqe, patience)
 
             else:
                 patience += 1
                 if patience == opt['train']['epoch_patience']:
-                    print("no improvement, final patience, updating learning rate to {}".format(model.get_current_learning_rate()))
                     model.update_learning_rate(lr_decay)
+                    print("no improvement, final patience, updating learning rate to {}".format(model.get_current_learning_rate()))
                     patience = 0
                 else:
                     print("no improvement, patience {} out of {}".format(patience, opt['train']['epoch_patience']))
@@ -245,7 +250,6 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         ax.grid()
 
         plt.savefig(os.path.join(opt['path']['log'], "psnr_evolution.png"))
-        plt.show()
 
 
 def get_resume_state(opt):
