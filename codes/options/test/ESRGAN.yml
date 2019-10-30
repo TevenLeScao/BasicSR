@@ -39,4 +39,4 @@ network_G:
 
 #### path
 path:
-  pretrain_model_G: ../experiments/ESRGAN_DIV_none_20/models/5_G.pth
+  pretrain_model_G: ~

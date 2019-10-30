@@ -17,7 +17,7 @@ class ODEBlock(nn.Module):
         If True calculates gradient with adjoint method, otherwise
         backpropagates directly through operations of ODE solver.
     """
-    def __init__(self, odefunc, is_conv=False, tol=1e-3, adjoint=False, max_num_steps=5000):
+    def __init__(self, odefunc, is_conv=False, tol=1e-3, adjoint=False, max_num_steps=100000):
         super(ODEBlock, self).__init__()
         self.adjoint = adjoint
         self.is_conv = is_conv
@@ -37,7 +37,6 @@ class ODEBlock(nn.Module):
         """
         # Forward pass corresponds to solving ODE, so reset number of function
         # evaluations counter
-        self.odefunc.nfe = 0
 
         if eval_times is None:
             integration_time = torch.tensor([0, 1]).float().type_as(x)
@@ -86,6 +85,14 @@ class ODEBlock(nn.Module):
         """
         integration_time = torch.linspace(0., 1., timesteps)
         return self.forward(x, eval_times=integration_time)
+
+    @property
+    def nfe(self):
+        return self.odefunc.nfe
+
+    @nfe.setter
+    def nfe(self, value):
+        self.odefunc.nfe = value
 
 
 class Conv2dTime(nn.Conv2d):

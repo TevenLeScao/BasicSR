@@ -175,7 +175,9 @@ if __name__ == '__main__':
                 raw_opt['network_G']['adjoint'] = adjoint
                 raw_opt['name'] = original_name + \
                                   naming_convention(dataset_name, diff, time_dependent, adjoint, nb)
-                if raw_opt['path']['pretrain_model_G'] is None:
+                # Check whether we're in manual mode (no parameter grid testing, no model explicitly passed)
+                if max(len(diff_list), len(time_dep_list), len(adjoint_list)) > 1 or \
+                        raw_opt['path']['pretrain_model_G'] is None:
                     directory = "../experiments/{}/models/".format(raw_opt['name'])
                     raw_opt['path']['pretrain_model_G'] = osp.join(directory, get_latest_numeric_model(directory))
                 parsed_opt = option.dict_to_nonedict(option.parse_raw(raw_opt, is_train=False))

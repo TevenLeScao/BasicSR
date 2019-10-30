@@ -1,4 +1,4 @@
-import os
+from os import path as osp, listdir
 import argparse
 import math
 import json
@@ -10,7 +10,7 @@ from test import setup_logging, create_loaders, create_model
 from utils.progress_bar import progress_bar
 
 
-def pareto_test_main(opt, logger, model, test_loader):
+def pareto_test_main(opt, logger, model, test_loader, export_images=False):
     test_set_name = test_loader.dataset.opt['name']
     logger.info('\nTesting [{:s}]...'.format(test_set_name))
 
@@ -19,11 +19,9 @@ def pareto_test_main(opt, logger, model, test_loader):
     avg_niqe = 0
 
     for batch_num, val_data in enumerate(test_loader):
-        img_name = os.path.splitext(os.path.basename(val_data['LQ_path'][0]))[0]
-        dataset_dir = os.path.join(opt['path']['results_root'], test_set_name)
+        img_name = osp.splitext(osp.basename(val_data['LQ_path'][0]))[0]
+        dataset_dir = osp.join(opt['path']['results_root'], test_set_name)
         util.mkdir(dataset_dir)
-        img_dir = os.path.join(dataset_dir, img_name)
-        util.mkdir(img_dir)
 
         model.feed_data(val_data)
         model.test()
@@ -34,9 +32,13 @@ def pareto_test_main(opt, logger, model, test_loader):
         # gt_img = util.tensor2img(visuals['GT'])  # uint8
 
         # Save SR images for reference
-        save_img_path = os.path.join(img_dir,
-                                     '{:s}_{:d}.png'.format(img_name, opt['model_index']))
-        util.save_img(sr_img, save_img_path)
+        if export_images:
+            suffix = opt['suffix']
+            if suffix:
+                save_img_path = osp.join(dataset_dir, img_name + suffix + '.png')
+            else:
+                save_img_path = osp.join(dataset_dir, img_name + '.png')
+            util.save_img(sr_img, save_img_path)
 
         # calculate PSNR
         item_psnr = util.tensor_psnr(model.real_H, model.fake_H)
@@ -54,19 +56,21 @@ def pareto_test_main(opt, logger, model, test_loader):
 
     avg_psnr = avg_psnr / idx
     avg_niqe = avg_niqe / idx
-    logger.info("epoch {} PSNR {} NIQE {}".format(opt['model_index'], avg_psnr, avg_niqe))
+    logger.info("PSNR {} NIQE {}".format(avg_psnr, avg_niqe))
 
     return avg_psnr, avg_niqe
 
 
-def pareto_harness(opt):
+def pareto_harness(opt, export_images=False):
     logger = setup_logging(opt)
     test_loaders = create_loaders(opt, logger)
     model = create_model(opt)
     all_results = []
 
     for test_loader in test_loaders:
-        all_results.append(pareto_test_main(opt, logger, model, test_loader))
+        all_results.append(pareto_test_main(opt, logger, model, test_loader, export_images=export_images))
+
+    logger.handlers.clear()
 
     return all_results
 
@@ -87,7 +91,7 @@ def get_pareto_epochs(validation_results):
 
 
 def determine_increment(folder):
-    filenames = os.listdir(folder)
+    filenames = listdir(folder)
     indexes = [int(filename.split("_")[0]) for filename in filenames if isnumeric(filename.split("_")[0])]
     return min(indexes)
 
@@ -95,29 +99,46 @@ def determine_increment(folder):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-opt', type=str, required=True, help='Path to options YAML file.')
-    raw_opt = option.load_yaml(parser.parse_args().opt)
+    parser.add_argument('--export-images', help='Whether to save output images', action='store_true')
+    parser.add_argument('--pareto', help='Only keep pareto frontier epochs', action='store_true')
+    args = parser.parse_args()
+    raw_opt = option.load_yaml(args.opt)
     opt = option.parse_raw(raw_opt, is_train=False)
     opt = option.dict_to_nonedict(opt)
-    experiment_folder = os.path.join(opt['path']['root'], 'experiments', opt['name'])
-    validation_results = json.load(open(os.path.join(experiment_folder, 'validation_results.json')))
-    pareto_epochs = get_pareto_epochs(validation_results)
-    increment = determine_increment(os.path.join(experiment_folder, 'models'))
-    pareto_results = []
+    experiment_folder = osp.join(opt['path']['root'], 'experiments', opt['name'])
+    pareto_results = {}
+    export_images = args.export_images
 
-    print(pareto_epochs)
+    if args.pareto:
+        validation_results = json.load(open(osp.join(experiment_folder, 'validation_results.json')))
+        pareto_epochs = get_pareto_epochs(validation_results)
+        # backwards compatibility with step-counted models, no change for current epoch-counted models, deprecate later
+        increment = determine_increment(osp.join(experiment_folder, 'models'))
+        print("Pareto epochs: {}".format(pareto_epochs))
+
+    else:
+        pareto_epochs = [model_name.split("_")[0]
+                         for model_name in listdir(osp.join(experiment_folder, "models"))]
+        print("Using all epochs: {}".format(pareto_epochs))
+        increment = 0
 
     for pareto_epoch in pareto_epochs:
-        print(pareto_epoch)
-        print(increment)
+
+        # load current model
         if increment > 0:
             index = (pareto_epoch + 1) * increment
         else:
             index = pareto_epoch
-        print(index)
-        opt['path']['pretrain_model_G'] = os.path.join(experiment_folder, "models",
+        opt['path']['pretrain_model_G'] = osp.join(experiment_folder, "models",
                                                        "{}_G.pth".format(index))
-        opt['model_index'] = pareto_epoch
 
-        pareto_results.append(pareto_harness(opt))
+        # setup different logging dir for every model
+        opt['name'] = raw_opt['name'] + "_epoch_{}".format(pareto_epoch)
+        results_root = osp.join(opt['path']['root'], 'results', opt['name'])
+        opt['path']['results_root'] = results_root
+        opt['path']['log'] = results_root
 
-    json.dump(pareto_results, os.path.join(experiment_folder, 'pareto_results.json'))
+        # run things !
+        pareto_results[pareto_epoch] = pareto_harness(opt, export_images=export_images)
+
+    json.dump(pareto_results, open(osp.join(experiment_folder, 'pareto_results.json'), 'w'))

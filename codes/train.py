@@ -65,8 +65,17 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
     try:
         total_nfe = model.netG.module.conv_trunk.nfe
+        nfe = True
+        try:
+            nfe_count = json.load(open(os.path.join(opt['path']['log'], "nfe_count.json")))
+            print("resuming NFE count from {}".format(os.path.join(opt['path']['log'], "nfe_count.json")))
+        except FileNotFoundError:
+            print("no previous NFE count file found, starting from scratch")
+            nfe_count = []
     except AttributeError:
+        nfe = False
         total_nfe = None
+        nfe_count = None
 
     best_niqe = 1e10
     best_psnr = 0
@@ -103,6 +112,7 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
     all_results = []
     start_time = time()
     for epoch in range(start_epoch, total_epochs):
+
         if pretraining_epochs > 0:
             if epoch == 0:
                 pretraining = True
@@ -110,8 +120,13 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
             if epoch == pretraining_epochs:
                 pretraining = False
                 logger.info('Pretraining done, adding feature and discriminator loss.')
+
         if opt['dist']:
             train_sampler.set_epoch(epoch)
+
+        if nfe:
+            epoch_nfe = []
+
         for batch_num, train_data in enumerate(train_loader):
             # try:
                 current_step += 1
@@ -120,20 +135,18 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                 model.feed_data(train_data)
                 model.optimize_parameters(current_step, pretraining=pretraining)
 
-
-                if total_nfe is not None:
+                if nfe:
                     last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
                     total_nfe = model.netG.module.conv_trunk.nfe
-                    progress_bar(batch_num, len(train_loader), msg=None)
-                    # progress_bar(batch_num, len(train_loader), msg='NFE: {}\n'.format(last_nfe))
-                else:
-                    progress_bar(batch_num, len(train_loader), msg=None)
-                    last_nfe = None
+                    epoch_nfe.append(last_nfe)
+
+                progress_bar(batch_num, len(train_loader), msg=None)
 
             # except RuntimeError:
             #     continue
 
-            # log
+        nfe_count.append(epoch_nfe)
+        # log
         if epoch % opt['logger']['print_freq'] == 0:
             logs = model.get_current_log()
             message = '<epoch:{:3d}, iter:{:8,d}, lr:{:.3e}> '.format(
@@ -148,6 +161,10 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                 logger.info(message)
 
         # batched validation
+
+        if nfe:
+            epoch_nfe = []
+
         if epoch % opt['train']['val_freq'] == 0 and rank <= 0 and epoch >= pretraining_epochs - 1:
             avg_psnr = 0.0
             avg_niqe = 0.0
@@ -160,6 +177,10 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
                     model.feed_data(val_data)
                     model.test()
+                    if nfe:
+                        last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
+                        total_nfe = model.netG.module.conv_trunk.nfe
+                        epoch_nfe.append(last_nfe)
 
                     visuals = model.get_current_visuals()
                     sr_img = util.tensor2img(visuals['SR'])  # uint8
@@ -186,15 +207,8 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
                     progress_bar(batch_num, len(val_loader), msg=None)
 
-                # except RuntimeError as e:
-                #     continue
-
-                # if total_nfe is not None:
-                #     last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
-                #     total_nfe = model.netG.module.conv_trunk.nfe
-                #     print('NFE: {}'.format(last_nfe))
-                # else:
-                #     last_nfe = None
+            nfe_count.append(epoch_nfe)
+            json.dump(nfe_count, open(os.path.join(opt['path']['log'], 'nfe_count.json'), 'w'), indent=2)
 
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx
@@ -235,13 +249,17 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         print('\n')
 
     if rank <= 0:
+        # save results
         logger.info('Saving the final model.')
         model.save('latest')
         logger.info('End of training.')
         json.dump(all_results, open(os.path.join(opt['path']['log'], 'validation_results.json'), 'w'), indent=2)
+        nfe_count.append(epoch_nfe)
 
+        # clear validation logger
         logger_val.handlers.clear()
 
+        # print out graph of val psnr with time
         fig, ax = plt.subplots()
         y = list(zip(*all_results))
         runtime, dev_psnr, dev_niqe = y[0], y[1], y[2]

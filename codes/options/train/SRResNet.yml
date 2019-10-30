@@ -48,9 +48,9 @@ network_G:
   nf: 64
   nb: 2
   upscale: 4
-  diff: standard
+  diff: augmented
   time_dependent: true
-  adjoint: true
+  adjoint: false
   sb: 1
 
 #### path
