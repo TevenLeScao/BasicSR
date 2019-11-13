@@ -127,9 +127,8 @@ if __name__ == '__main__':
     raw_opt = option.load_yaml(args.opt)
     original_name = raw_opt['name']
 
-    for cascade_depth in [2, 3, 4, 5]:
+    for cascade_depth in [3]:
         raw_opt['network_G']['nb'] = cascade_depth
-        raw_opt['network_G']['sb'] = cascade_depth
         raw_opt['name'] = original_name + '_cascade_{}'.format(cascade_depth)
         parsed_opt = option.parse_raw(raw_opt, is_train=True)
 

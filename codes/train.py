@@ -372,8 +372,10 @@ if __name__ == '__main__':
     original_name = raw_opt['name']
 
     for diff in diff_list:
-        for time_dependent in time_dep_list:
-            for adjoint in adjoint_list:
+        # time_dependency and adjoint/discrete parameters only make sense for a set of diff values
+        grid_testing = diff not in ["None", False, "checkpointed"]
+        for time_dependent in time_dep_list if grid_testing else [False]:
+            for adjoint in adjoint_list if grid_testing else [False]:
                 dataset_name = raw_opt['datasets']['train']['name']
                 nb = raw_opt['network_G']['nb']
                 raw_opt['network_G']['diff'] = diff

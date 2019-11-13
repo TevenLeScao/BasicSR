@@ -1,4 +1,4 @@
-name: MSRResNet
+name: MSRResNet_euler
 suffix: ~  # add suffix to saved images
 model: sr
 distortion: sr
@@ -10,19 +10,19 @@ datasets:
 #  test_1:  # the 1st test dataset
 #    name: div2k100
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: ../../datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: ../../datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
 #  test_2:  # the 2st test dataset
 #    name: BSD_val
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: ../../datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: ../../datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
 #    batch_size: 1
   test_3:
     name: urban100
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/LR/x4.lmdb
+    dataroot_GT: ../../datasets/urban100_test_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: ../../datasets/urban100_test_bicLRx4/LR/x4.lmdb
     batch_size: 1
 
 #### network structures
@@ -31,16 +31,16 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 2
+  nb: 7
   upscale: 4
   diff: augmented
   time_dependent: true
   adjoint: false
-  sb: 1
-  training_set: BSD
+  sb: 5
+  training_set: DIV2K
 
 #### path
 path:
-  pretrain_model_G: ~
+  pretrain_model_G: /home/teven/canvas/python/BasicSR/experiments/MSRResNet_DIV2K_augmented_time_7/models/38_G.pth
 #  pretrain_model_G: ../experiments/MSRResNet_23blocks/models/14_G.pth
 #  pretrain_model_G: ../experiments/pretrained_models/RRDB_PSNR_x4.pth

@@ -17,8 +17,8 @@ def generate_mod_LR_bic(split):
     up_scale = 4
     mod_scale = 4
     # set data dir
-    sourcedir = '/home/teven/canvas/python/datasets/{}_{}'.format(dataset_name, split)
-    savedir = '/home/teven/canvas/python/datasets/{}_{}_bicLRx4'.format(dataset_name, split)
+    sourcedir = '../../datasets/{}_{}'.format(dataset_name, split)
+    savedir = '../../datasets/{}_{}_bicLRx4'.format(dataset_name, split)
 
     saveHRpath = os.path.join(savedir, 'HR', 'x' + str(mod_scale))
     saveLRpath = os.path.join(savedir, 'LR', 'x' + str(up_scale))

@@ -20,11 +20,11 @@ removed_fraction = 0
 def main(split):
     kept_indices = None
     for quality in ("LR", "HR"):
-        img_folder = '/home/teven/canvas/python/datasets/{}_{}_bicLRx4/{}/x4/*'.format(  # glob matching pattern
+        img_folder = '../../datasets/{}_{}_bicLRx4/{}/x4/*'.format(  # glob matching pattern
             dataset_name,
             split,
             quality)
-        lmdb_save_path = '/home/teven/canvas/python/datasets/{}_{}_bicLRx4/{}/x4{}.lmdb'.format(
+        lmdb_save_path = '../../datasets/{}_{}_bicLRx4/{}/x4{}.lmdb'.format(
             dataset_name,
             split,
             quality,

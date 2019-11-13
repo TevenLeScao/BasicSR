@@ -17,11 +17,12 @@ class ODEBlock(nn.Module):
         If True calculates gradient with adjoint method, otherwise
         backpropagates directly through operations of ODE solver.
     """
-    def __init__(self, odefunc, is_conv=False, tol=1e-3, adjoint=False, max_num_steps=100000):
+    def __init__(self, odefunc, is_conv=False, tol=1e-3, adjoint=False, max_num_steps=100000, method='dopri5'):
         super(ODEBlock, self).__init__()
         self.adjoint = adjoint
         self.is_conv = is_conv
         self.odefunc = odefunc
+        self.method = method
         self.tol = tol
         self.max_num_steps = max_num_steps
 
@@ -62,11 +63,11 @@ class ODEBlock(nn.Module):
 
         if self.adjoint:
             out = odeint_adjoint(self.odefunc, x_aug, integration_time,
-                                 rtol=self.tol, atol=self.tol, method='dopri5',
+                                 rtol=self.tol, atol=self.tol, method=self.method,
                                  options={'max_num_steps': self.max_num_steps})
         else:
             out = odeint(self.odefunc, x_aug, integration_time,
-                         rtol=self.tol, atol=self.tol, method='dopri5',
+                         rtol=self.tol, atol=self.tol, method=self.method,
                          options={'max_num_steps': self.max_num_steps})
 
         if eval_times is None:

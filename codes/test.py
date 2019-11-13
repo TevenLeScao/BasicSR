@@ -65,6 +65,14 @@ def test_main(opt, logger, model, test_loader, export_images=False):
     test_results['ssim_y'] = []
     test_results['niqe'] = []
 
+    try:
+        total_nfe = model.netG.module.conv_trunk.nfe
+        nfe = True
+        test_results['nfe'] = []
+    except AttributeError:
+        nfe = False
+        test_results['nfe'] = None
+
     for data in test_loader:
         need_GT = False if test_loader.dataset.opt['dataroot_GT'] is None else True
         model.feed_data(data, need_GT=need_GT)
@@ -74,6 +82,13 @@ def test_main(opt, logger, model, test_loader, export_images=False):
         model.test()
         visuals = model.get_current_visuals(need_GT=need_GT)
         sr_img = util.tensor2img(visuals['SR'])  # uint8
+
+        if nfe:
+            last_nfe = model.netG.module.conv_trunk.nfe - total_nfe
+            total_nfe = model.netG.module.conv_trunk.nfe
+            test_results['nfe'].append(last_nfe)
+        else:
+            last_nfe = None
 
         # save images
         if export_images:
@@ -119,11 +134,11 @@ def test_main(opt, logger, model, test_loader, export_images=False):
                 test_results['psnr_y'].append(psnr_y)
                 test_results['ssim_y'].append(ssim_y)
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}.'.
-                        format(img_name, psnr, ssim, niqe, psnr_y, ssim_y))
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}, NFE: {}.'.
+                        format(img_name, psnr, ssim, niqe, psnr_y, ssim_y, last_nfe))
             else:
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}'.format(img_name, psnr, ssim, niqe))
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}, NFE: {}'.format(img_name, psnr, ssim, niqe, last_nfe))
         else:
             logger.info(img_name)
 
@@ -150,7 +165,7 @@ def get_latest_numeric_model(directory):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-opt', type=str, required=True, help='Path to options YAML file.')
-    parser.add_argument('-export_images', help='Whether to save output images', action='store_true')
+    parser.add_argument('--export-images', help='Whether to save output images', action='store_true')
     parser.add_argument('-dl', '--diff-list', nargs='+', default=[])
     parser.add_argument('-td', '--time-dep-list', nargs='+', default=[])
     parser.add_argument('-ad', '--adjoint-list', nargs='+', default=[])

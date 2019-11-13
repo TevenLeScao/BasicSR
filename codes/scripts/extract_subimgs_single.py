@@ -27,8 +27,8 @@ else:
 
 def main(split):
     """A multi-thread tool to crop sub imags."""
-    input_folder = '/home/teven/canvas/python/datasets/{}_{}_uncropped/'.format(dataset_name, split)
-    save_folder = '/home/teven/canvas/python/datasets/{}_{}/'.format(dataset_name, split)
+    input_folder = '../../datasets/{}_{}_uncropped/'.format(dataset_name, split)
+    save_folder = '../../datasets/{}_{}/'.format(dataset_name, split)
     n_thread = 20
     # CV_IMWRITE_PNG_COMPRESSION from 0 to 9. A higher value means a smaller size and longer
     # compression time. If read raw images during training, use 0 for faster IO speed.

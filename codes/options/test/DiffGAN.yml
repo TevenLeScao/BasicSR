@@ -42,5 +42,4 @@ network_G:
 
 #### path
 path:
-#  pretrain_model_G: ~
-  pretrain_model_G: ../experiments/GAN_DIV_augmented_time_7/models/5_G.pth
+  pretrain_model_G: ~

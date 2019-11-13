@@ -12,16 +12,16 @@ datasets:
   train:
     name: DIV2K
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
+    dataroot_GT: ../../datasets/DIV2K_train_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: ../../datasets/DIV2K_train_bicLRx4/LR/x4.lmdb
 #    name: BSD
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_train_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: ../../datasets/BSDS_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: ../../datasets/BSDS_train_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/urban100_train_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_train_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: ../../datasets/urban100_train_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: ../../datasets/urban100_train_bicLRx4/LR/x4.lmdb
 
     use_shuffle: true
     n_workers: 6  # per GPU
@@ -33,16 +33,16 @@ datasets:
   val:
     name: DIV2K_val
     mode: LQGT
-    dataroot_GT: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
-    dataroot_LQ: /home/teven/canvas/python/datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
+    dataroot_GT: ../../datasets/DIV2K_valid_bicLRx4/HR/x4.lmdb
+    dataroot_LQ: ../../datasets/DIV2K_valid_bicLRx4/LR/x4.lmdb
 #    name: BSD_val
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: ../../datasets/BSDS_valid_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: ../../datasets/BSDS_valid_bicLRx4/LR/x4.lmdb
 #    name: urban100
 #    mode: LQGT
-#    dataroot_GT: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/HR/x4.lmdb
-#    dataroot_LQ: /home/teven/canvas/python/datasets/urban100_test_bicLRx4/LR/x4.lmdb
+#    dataroot_GT: ../../python/datasets/urban100_test_bicLRx4/HR/x4.lmdb
+#    dataroot_LQ: ../../datasets/urban100_test_bicLRx4/LR/x4.lmdb
     batch_size: 16
 
 #### network structures

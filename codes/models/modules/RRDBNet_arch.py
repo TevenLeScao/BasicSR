@@ -1,5 +1,6 @@
 import functools
 import itertools
+import warnings
 
 import torch
 import torch.nn as nn
@@ -14,32 +15,36 @@ from torchdiffeq._impl.augmented_conv import ODEBlock as AugBlock, ConvODEFunc a
 
 
 class ResidualDenseBlock_5C(nn.Module):
-    def __init__(self, nf=64, gc=32, sb=5, bias=True):
+    def __init__(self, nf=64, gc=32, bias=True):
         super(ResidualDenseBlock_5C, self).__init__()
         # gc: growth channel, i.e. intermediate channels
-        self.convs = torch.nn.ModuleList([nn.Conv2d(nf+i*gc, gc, 3, 1, 1, bias=bias) for i in range(sb-1)])
-        self.final_conv = nn.Conv2d(nf + (sb-1) * gc, nf, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv1 = nn.Conv2d(nf, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv2 = nn.Conv2d(nf + gc, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv3 = nn.Conv2d(nf + 2 * gc, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv4 = nn.Conv2d(nf + 3 * gc, gc, 3, 1, 1, bias=bias, padding_mode="reflect")
+        self.conv5 = nn.Conv2d(nf + 4 * gc, nf, 3, 1, 1, bias=bias, padding_mode="reflect")
         self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 
         # initialization
-        mutil.initialize_weights([*self.convs, self.final_conv], 0.1)
+        mutil.initialize_weights([self.conv1, self.conv2, self.conv3, self.conv4, self.conv5], 0.1)
 
     def forward(self, x):
-        x_original = x
-        for conv in self.convs:
-            x = torch.cat((x, self.lrelu(conv(x))), 1)
-        x = self.final_conv(x)
-        return x * 0.2 + x_original
+        x1 = self.lrelu(self.conv1(x))
+        x2 = self.lrelu(self.conv2(torch.cat((x, x1), 1)))
+        x3 = self.lrelu(self.conv3(torch.cat((x, x1, x2), 1)))
+        x4 = self.lrelu(self.conv4(torch.cat((x, x1, x2, x3), 1)))
+        x5 = self.conv5(torch.cat((x, x1, x2, x3, x4), 1))
+        return x5 * 0.2 + x
 
 
 class RRDB(nn.Module):
     '''Residual in Residual Dense Block'''
 
-    def __init__(self, nf, gc=32, sb=5):
+    def __init__(self, nf, gc=32):
         super(RRDB, self).__init__()
-        self.RDB1 = ResidualDenseBlock_5C(nf, gc, sb)
-        self.RDB2 = ResidualDenseBlock_5C(nf, gc, sb)
-        self.RDB3 = ResidualDenseBlock_5C(nf, gc, sb)
+        self.RDB1 = ResidualDenseBlock_5C(nf, gc)
+        self.RDB2 = ResidualDenseBlock_5C(nf, gc)
+        self.RDB3 = ResidualDenseBlock_5C(nf, gc)
 
     def forward(self, x):
         out = self.RDB1(x)
@@ -118,11 +123,12 @@ class RRDBNet(nn.Module):
                 mutil.initialize_weights(block.odefunc.convs)
         elif differential == "augmented":
             augment_dim = nf//4
-            self.conv_trunk = AugBlock(AugFunc(nf=nf, nb=nb, augment_dim=augment_dim, time_dependent=time_dependent), adjoint=adjoint, is_conv=True)
+            warnings.warn("euler mode")
+            self.conv_trunk = AugBlock(AugFunc(nf=nf, nb=nb, augment_dim=augment_dim, time_dependent=time_dependent), adjoint=adjoint, is_conv=True, method='dopri5')
             self.trunk_conv = nn.Conv2d(nf+augment_dim, nf, 3, 1, 1, bias=True)
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential is None or differential == "nodiff":
-            RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc, sb=sb)
+            RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
             self.conv_trunk = mutil.make_layer(RRDB_block_f, nb)
         else:
             raise NotImplementedError("unrecognized differential system passed")
