@@ -54,7 +54,7 @@ network_G:
   in_nc: 3
   out_nc: 3
   nf: 64
-  nb: 7
+  nb: 3
   upscale: 4
   diff: augmented
   time_dependent: true
@@ -63,9 +63,9 @@ network_G:
 
 #### path
 path:
-  pretrain_model_G: ~
+  pretrain_model_G:
   strict_load: true
-  resume_state: ~
+  resume_state:
 
 #### training settings: learning rate scheme, loss
 train:

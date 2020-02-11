@@ -3,7 +3,7 @@ import sys
 import cv2
 import numpy as np
 
-dataset_name = "urban100"
+dataset_name = "G100"
 
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -25,8 +25,7 @@ def generate_mod_LR_bic(split):
     saveBicpath = os.path.join(savedir, 'Bic', 'x' + str(up_scale))
 
     if not os.path.isdir(sourcedir):
-        print('Error: No source data found')
-        exit(0)
+        raise FileNotFoundError('Error: No source data found at {}'.format(os.path.abspath(sourcedir)))
     if not os.path.isdir(savedir):
         os.mkdir(savedir)
 
@@ -80,7 +79,7 @@ def generate_mod_LR_bic(split):
 
 
 if __name__ == "__main__":
-    if dataset_name == 'urban100':
+    if dataset_name in ["urban100", "G100", "Set5", "Set14"]:
         for split in ["test"]:
             generate_mod_LR_bic(split)
     else:

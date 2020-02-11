@@ -123,8 +123,10 @@ class RRDBNet(nn.Module):
                 mutil.initialize_weights(block.odefunc.convs)
         elif differential == "augmented":
             augment_dim = nf//4
-            warnings.warn("euler mode")
-            self.conv_trunk = AugBlock(AugFunc(nf=nf, nb=nb, augment_dim=augment_dim, time_dependent=time_dependent), adjoint=adjoint, is_conv=True, method='dopri5')
+            method = 'dopri5'
+            if method == 'euler':
+                warnings.warn("euler mode")
+            self.conv_trunk = AugBlock(AugFunc(nf=nf, nb=nb, augment_dim=augment_dim, time_dependent=time_dependent), adjoint=adjoint, is_conv=True, method=method)
             self.trunk_conv = nn.Conv2d(nf+augment_dim, nf, 3, 1, 1, bias=True)
             mutil.initialize_weights(self.conv_trunk.odefunc.convs)
         elif differential is None or differential == "nodiff":

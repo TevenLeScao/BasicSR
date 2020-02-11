@@ -40,9 +40,12 @@ def log_metrics(logger, test_set_name, test_results):
     # Average PSNR/SSIM results
     ave_psnr = sum(test_results['psnr']) / len(test_results['psnr'])
     ave_ssim = sum(test_results['ssim']) / len(test_results['ssim'])
-    ave_niqe = sum(test_results['niqe']) / len(test_results['niqe'])
+    try:
+        ave_niqe = sum(test_results['niqe']) / len(test_results['niqe'])
+    except TypeError:
+        ave_niqe = None
     logger.info(
-        '----Average PSNR/SSIM/NIQE results for {}----\n\tPSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}\n'.format(
+        '----Average PSNR/SSIM/NIQE results for {}----\n\tPSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {}\n'.format(
             test_set_name, ave_psnr, ave_ssim, ave_niqe))
     if test_results['psnr_y'] and test_results['ssim_y']:
         ave_psnr_y = sum(test_results['psnr_y']) / len(test_results['psnr_y'])
@@ -52,7 +55,7 @@ def log_metrics(logger, test_set_name, test_results):
                 format(ave_psnr_y, ave_ssim_y))
 
 
-def test_main(opt, logger, model, test_loader, export_images=False):
+def test_main(opt, logger, model, test_loader, export_images=False, calculate_niqe=False):
     test_set_name = test_loader.dataset.opt['name']
     logger.info('\nTesting [{:s}]...'.format(test_set_name))
     dataset_dir = osp.join(opt['path']['results_root'], test_set_name)
@@ -74,7 +77,7 @@ def test_main(opt, logger, model, test_loader, export_images=False):
         test_results['nfe'] = None
 
     for data in test_loader:
-        need_GT = False if test_loader.dataset.opt['dataroot_GT'] is None else True
+        need_GT = test_loader.dataset.opt['dataroot_GT'] is not None
         model.feed_data(data, need_GT=need_GT)
         img_path = data['GT_path'][0] if need_GT else data['LQ_path'][0]
         img_name = osp.splitext(osp.basename(img_path))[0]
@@ -115,7 +118,10 @@ def test_main(opt, logger, model, test_loader, export_images=False):
 
             psnr = util.calculate_psnr(cropped_sr_img * 255, cropped_gt_img * 255)
             ssim = util.calculate_ssim(cropped_sr_img * 255, cropped_gt_img * 255)
-            niqe = util.calculate_niqe(cropped_sr_img * 255)
+            if calculate_niqe:
+                niqe = util.calculate_niqe(cropped_sr_img * 255)
+            else:
+                niqe = None
             test_results['psnr'].append(psnr)
             test_results['ssim'].append(ssim)
             test_results['niqe'].append(niqe)
@@ -134,25 +140,34 @@ def test_main(opt, logger, model, test_loader, export_images=False):
                 test_results['psnr_y'].append(psnr_y)
                 test_results['ssim_y'].append(ssim_y)
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}, NFE: {}.'.
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {}; PSNR_Y: {:.6f} dB; SSIM_Y: {:.6f}, NFE: {}.'.
                         format(img_name, psnr, ssim, niqe, psnr_y, ssim_y, last_nfe))
             else:
                 logger.info(
-                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {:.6f}, NFE: {}'.format(img_name, psnr, ssim, niqe, last_nfe))
+                    '{:20s} - PSNR: {:.6f} dB; SSIM: {:.6f}; NIQE: {}, NFE: {}'.format(img_name, psnr, ssim, niqe,
+                                                                                       last_nfe))
         else:
             logger.info(img_name)
 
         if need_GT:  # metrics
             log_metrics(logger, test_set_name, test_results)
 
+    return test_results
 
-def test_harness(opt, export_images=False):
+
+def test_harness(opt, export_images=False, calculate_niqe=False):
     logger = setup_logging(opt)
     test_loaders = create_loaders(opt, logger)
     model = create_model(opt)
+    all_test_results = []
 
     for test_loader in test_loaders:
-        test_main(opt, logger, model, test_loader, export_images=export_images)
+        all_test_results.append(test_main(opt, logger, model, test_loader,
+                                          export_images=export_images, calculate_niqe=calculate_niqe))
+    for i, test_loader in enumerate(test_loaders):
+        if test_loader.dataset.opt['dataroot_GT'] is not None:
+            test_set_name = test_loader.dataset.opt['name']
+            log_metrics(logger, test_set_name, all_test_results[i])
 
     logger.handlers.clear()
 
@@ -166,19 +181,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-opt', type=str, required=True, help='Path to options YAML file.')
     parser.add_argument('--export-images', help='Whether to save output images', action='store_true')
+    parser.add_argument('--niqe', help='Whether to calculate niqe', action='store_true')
     parser.add_argument('-dl', '--diff-list', nargs='+', default=[])
     parser.add_argument('-td', '--time-dep-list', nargs='+', default=[])
     parser.add_argument('-ad', '--adjoint-list', nargs='+', default=[])
+
     args = parser.parse_args()
     raw_opt = option.load_yaml(args.opt)
 
     diff_list = args.diff_list if len(args.diff_list) > 0 else [raw_opt['network_G']['diff']]
     time_dep_list = [eval(value) for value in args.time_dep_list] if len(args.time_dep_list) > 0 \
         else [raw_opt['network_G']['time_dependent']]
-    adjoint_list = [eval(value) for value in args.adjoint_list] if len(args.adjoint_list) > 0\
+    adjoint_list = [eval(value) for value in args.adjoint_list] if len(args.adjoint_list) > 0 \
         else [raw_opt['network_G']['adjoint']]
     original_name = raw_opt['name']
     export_images = parser.parse_args().export_images
+    calculate_niqe = parser.parse_args().niqe
 
     for diff in diff_list:
         for time_dependent in time_dep_list:
@@ -197,4 +215,4 @@ if __name__ == '__main__':
                     raw_opt['path']['pretrain_model_G'] = osp.join(directory, get_latest_numeric_model(directory))
                 parsed_opt = option.dict_to_nonedict(option.parse_raw(raw_opt, is_train=False))
 
-                test_harness(parsed_opt, export_images=export_images)
+                test_harness(parsed_opt, export_images=export_images, calculate_niqe=calculate_niqe)

@@ -75,7 +75,7 @@ class ODEBlock(nn.Module):
         else:
             return out
 
-    def trajectory(self, x, timesteps):
+    def trajectory(self, x, timesteps=None, integration_time=None):
         """Returns ODE trajectory.
         Parameters
         ----------
@@ -84,7 +84,9 @@ class ODEBlock(nn.Module):
         timesteps : int
             Number of timesteps in trajectory.
         """
-        integration_time = torch.linspace(0., 1., timesteps)
+        assert timesteps is not None or integration_time is not None
+        if integration_time is None:
+            integration_time = torch.linspace(0., 1., timesteps)
         return self.forward(x, eval_times=integration_time)
 
     @property

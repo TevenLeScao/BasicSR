@@ -347,7 +347,7 @@ def train_harness(opt, rank, main_loop=train_main):
 
 
 def naming_convention(dataset_name, diff, time_dependent, adjoint, nb):
-    return "_{}_{}{}{}_{}".format(dataset_name, diff, "_time" if time_dependent else "", "_adjoint" if adjoint else "", nb)
+    return "_{}_{}{}{}_{}".format(dataset_name, diff, "_time" if time_dependent and diff else "", "_adjoint" if adjoint and diff else "", nb)
 
 
 if __name__ == '__main__':

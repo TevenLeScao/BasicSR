@@ -14,7 +14,8 @@ except ImportError:
     pass
 
 # configurations
-dataset_name = "urban100"
+dataset_name = "G100"
+# in case we need to do the valid/test split ourselves
 removed_fraction = 0
 
 def main(split):
@@ -102,7 +103,7 @@ def main(split):
 
 
 if __name__ == '__main__':
-    if dataset_name == 'urban100':
+    if dataset_name in ["urban100", "G100", "Set5", "Set14"]:
         for split in ["test"]:
             main(split)
     else:
