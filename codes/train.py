@@ -144,8 +144,8 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
 
             # except RuntimeError:
             #     continue
-
-        nfe_count.append(epoch_nfe)
+        if nfe:
+            nfe_count.append(epoch_nfe)
         # log
         if epoch % opt['logger']['print_freq'] == 0:
             logs = model.get_current_log()
@@ -206,9 +206,9 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
                             avg_niqe += item_niqe
 
                     progress_bar(batch_num, len(val_loader), msg=None)
-
-            nfe_count.append(epoch_nfe)
-            json.dump(nfe_count, open(os.path.join(opt['path']['log'], 'nfe_count.json'), 'w'), indent=2)
+            if nfe:
+                nfe_count.append(epoch_nfe)
+                json.dump(nfe_count, open(os.path.join(opt['path']['log'], 'nfe_count.json'), 'w'), indent=2)
 
             avg_psnr = avg_psnr / idx
             avg_niqe = avg_niqe / idx
@@ -254,7 +254,9 @@ def train_main(opt, train_loader, val_loader, train_sampler, logger, resume_stat
         model.save('latest')
         logger.info('End of training.')
         json.dump(all_results, open(os.path.join(opt['path']['log'], 'validation_results.json'), 'w'), indent=2)
-        nfe_count.append(epoch_nfe)
+        if nfe:
+            nfe_count.append(epoch_nfe)
+            json.dump(nfe_count, open(os.path.join(opt['path']['log'], 'nfe_count.json'), 'w'), indent=2)
 
         # clear validation logger
         logger_val.handlers.clear()
